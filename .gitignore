@@ -43,3 +43,7 @@ next-env.d.ts
 # Local SQLite database
 profitlevel.db
 profitlevel.db-*
+
+# Migration scripts and backups
+migrate-to-turso.js
+profitlevel_backup.sql
