@@ -1,65 +1,1310 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import type { JobWithCosts, Material, Labor, Mileage } from '@/lib/types';
+import MonthOverviewCard from './components/MonthOverview';
+import { getProfitColor } from '@/lib/utils';
+import AddExpenseModal from './components/AddExpenseModal';
 
 export default function Home() {
+  const router = useRouter();
+  const [jobs, setJobs] = useState<JobWithCosts[]>([]);
+  const [selectedJob, setSelectedJob] = useState<number | null>(null);
+  const [showAddJob, setShowAddJob] = useState(false);
+  const [showAddMaterial, setShowAddMaterial] = useState(false);
+  const [showAddLabor, setShowAddLabor] = useState(false);
+  const [showAddMileage, setShowAddMileage] = useState(false);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [labor, setLabor] = useState<Labor[]>([]);
+  const [mileage, setMileage] = useState<Mileage[]>([]);
+
+  const [grossGoal, setGrossGoal] = useState(195);
+  const [netGoal, setNetGoal] = useState(120);
+  const [existingClients, setExistingClients] = useState<string[]>([]);
+  const [existingHelpers, setExistingHelpers] = useState<string[]>([]);
+
+  // Form states
+  const [newJob, setNewJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+  const [newMaterial, setNewMaterial] = useState({ item_name: '', cost: '', tax: '' });
+  const [newLabor, setNewLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
+  const [newMileage, setNewMileage] = useState({ miles: '' });
+
+  // Edit states
+  const [editingJob, setEditingJob] = useState<number | null>(null);
+  const [editingMaterial, setEditingMaterial] = useState<number | null>(null);
+  const [editingLabor, setEditingLabor] = useState<number | null>(null);
+  const [editingMileage, setEditingMileage] = useState<number | null>(null);
+
+  const [editJob, setEditJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+  const [editMaterial, setEditMaterial] = useState({ item_name: '', cost: '', tax: '' });
+  const [editLabor, setEditLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
+  const [editMileage, setEditMileage] = useState({ miles: '' });
+
+  // Client dropdown states
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [showEditClientDropdown, setShowEditClientDropdown] = useState(false);
+  const [filteredClients, setFilteredClients] = useState<string[]>([]);
+
+  // Helper dropdown states
+  const [showHelperDropdown, setShowHelperDropdown] = useState(false);
+  const [showEditHelperDropdown, setShowEditHelperDropdown] = useState(false);
+  const [filteredHelpers, setFilteredHelpers] = useState<string[]>([]);
+
+  // Collapsible sections states
+  const [showMaterialsList, setShowMaterialsList] = useState(false);
+  const [showLaborList, setShowLaborList] = useState(false);
+  const [showMileageList, setShowMileageList] = useState(false);
+
+  useEffect(() => {
+    fetchJobs();
+    fetchGoals();
+    fetchExistingClients();
+    fetchExistingHelpers();
+  }, []);
+
+  useEffect(() => {
+    if (selectedJob) {
+      fetchJobDetails(selectedJob);
+    }
+  }, [selectedJob]);
+
+  const fetchJobs = async () => {
+    const res = await fetch('/api/jobs');
+    const data = await res.json();
+    setJobs(data);
+    fetchExistingClients();
+  };
+
+  const fetchGoals = async () => {
+    const res = await fetch('/api/settings/goals');
+    const data = await res.json();
+    setGrossGoal(parseFloat(data.gross_hourly_goal));
+    setNetGoal(parseFloat(data.net_hourly_goal));
+  };
+
+  const fetchExistingClients = async () => {
+    const res = await fetch('/api/jobs');
+    const data = await res.json();
+    const uniqueClients = Array.from(new Set(
+      data
+        .map((job: JobWithCosts) => job.client_name)
+        .filter((name: string | null) => name && name.trim() !== '')
+    )) as string[];
+    setExistingClients(uniqueClients.sort());
+  };
+
+  const fetchExistingHelpers = async () => {
+    const res = await fetch('/api/labor');
+    const data = await res.json();
+    const uniqueHelpers = Array.from(new Set(
+      data
+        .map((labor: Labor) => labor.helper_name)
+        .filter((name: string | null) => name && name.trim() !== '')
+    )) as string[];
+    setExistingHelpers(uniqueHelpers.sort());
+  };
+
+  const fetchJobDetails = async (jobId: number) => {
+    const [materialsRes, laborRes, mileageRes] = await Promise.all([
+      fetch(`/api/materials?job_id=${jobId}`),
+      fetch(`/api/labor?job_id=${jobId}`),
+      fetch(`/api/mileage?job_id=${jobId}`),
+    ]);
+    setMaterials(await materialsRes.json());
+    setLabor(await laborRes.json());
+    setMileage(await mileageRes.json());
+    fetchExistingHelpers();
+  };
+
+  const addJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newJob.name,
+        client_name: newJob.client_name || null,
+        contract_price: parseFloat(newJob.contract_price),
+        job_date: newJob.job_date,
+        hours_spent: newJob.hours_spent ? parseFloat(newJob.hours_spent) : null,
+      }),
+    });
+    setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+    setShowAddJob(false);
+    fetchJobs();
+  };
+
+  const updateJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingJob) return;
+
+    await fetch(`/api/jobs/${editingJob}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: editJob.name,
+        client_name: editJob.client_name || null,
+        contract_price: parseFloat(editJob.contract_price),
+        job_date: editJob.job_date,
+        hours_spent: editJob.hours_spent ? parseFloat(editJob.hours_spent) : null,
+      }),
+    });
+    setEditingJob(null);
+    fetchJobs();
+  };
+
+  const deleteJob = async (id: number) => {
+    if (!confirm('Delete this job and all associated data?')) return;
+    await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
+    setSelectedJob(null);
+    fetchJobs();
+  };
+
+  const addMaterial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/materials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: selectedJob,
+        item_name: newMaterial.item_name,
+        cost: parseFloat(newMaterial.cost),
+        tax: parseFloat(newMaterial.tax) || 0,
+      }),
+    });
+    setNewMaterial({ item_name: '', cost: '', tax: '' });
+    setShowAddMaterial(false);
+    setShowMaterialsList(true); // Keep section expanded after adding
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const updateMaterial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMaterial) return;
+
+    await fetch(`/api/materials/${editingMaterial}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        item_name: editMaterial.item_name,
+        cost: parseFloat(editMaterial.cost),
+        tax: parseFloat(editMaterial.tax) || 0,
+      }),
+    });
+    setEditingMaterial(null);
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const deleteMaterial = async (id: number) => {
+    if (!confirm('Delete this material entry?')) return;
+    await fetch(`/api/materials/${id}`, { method: 'DELETE' });
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const addLabor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/labor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: selectedJob,
+        helper_name: newLabor.helper_name,
+        hours: newLabor.is_flat_rate ? 0 : parseFloat(newLabor.hours),
+        rate: parseFloat(newLabor.rate),
+        is_flat_rate: newLabor.is_flat_rate,
+      }),
+    });
+    setNewLabor({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
+    setShowAddLabor(false);
+    setShowLaborList(true); // Keep section expanded after adding
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const updateLabor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLabor) return;
+
+    await fetch(`/api/labor/${editingLabor}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        helper_name: editLabor.helper_name,
+        hours: editLabor.is_flat_rate ? 0 : parseFloat(editLabor.hours),
+        rate: parseFloat(editLabor.rate),
+        is_flat_rate: editLabor.is_flat_rate,
+      }),
+    });
+    setEditingLabor(null);
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const deleteLabor = async (id: number) => {
+    if (!confirm('Delete this labor entry?')) return;
+    await fetch(`/api/labor/${id}`, { method: 'DELETE' });
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const addMileage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/mileage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: selectedJob,
+        miles: parseFloat(newMileage.miles),
+      }),
+    });
+    setNewMileage({ miles: '' });
+    setShowAddMileage(false);
+    setShowMileageList(true); // Keep section expanded after adding
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const updateMileage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMileage) return;
+
+    await fetch(`/api/mileage/${editingMileage}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        miles: parseFloat(editMileage.miles),
+      }),
+    });
+    setEditingMileage(null);
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const deleteMileage = async (id: number) => {
+    if (!confirm('Delete this mileage entry?')) return;
+    await fetch(`/api/mileage/${id}`, { method: 'DELETE' });
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const startEditJob = (job: JobWithCosts) => {
+    setEditJob({
+      name: job.name,
+      client_name: job.client_name || '',
+      contract_price: job.contract_price.toString(),
+      job_date: job.job_date,
+      hours_spent: job.hours_spent ? job.hours_spent.toString() : '',
+    });
+    setEditingJob(job.id);
+  };
+
+  const startEditMaterial = (mat: Material) => {
+    setEditMaterial({
+      item_name: mat.item_name,
+      cost: mat.cost.toString(),
+      tax: mat.tax.toString(),
+    });
+    setEditingMaterial(mat.id);
+  };
+
+  const startEditLabor = (lab: Labor) => {
+    setEditLabor({
+      helper_name: lab.helper_name,
+      hours: lab.hours.toString(),
+      rate: lab.rate.toString(),
+      is_flat_rate: lab.is_flat_rate === 1,
+    });
+    setEditingLabor(lab.id);
+  };
+
+  const startEditMileage = (mil: Mileage) => {
+    setEditMileage({
+      miles: mil.miles.toString(),
+    });
+    setEditingMileage(mil.id);
+  };
+
+  const handleClientInput = (value: string, isEdit: boolean = false) => {
+    if (isEdit) {
+      setEditJob({ ...editJob, client_name: value });
+    } else {
+      setNewJob({ ...newJob, client_name: value });
+    }
+
+    if (value.trim() === '') {
+      setFilteredClients([]);
+      if (isEdit) {
+        setShowEditClientDropdown(false);
+      } else {
+        setShowClientDropdown(false);
+      }
+    } else {
+      const filtered = existingClients.filter(client =>
+        client.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredClients(filtered);
+      if (isEdit) {
+        setShowEditClientDropdown(true);
+      } else {
+        setShowClientDropdown(true);
+      }
+    }
+  };
+
+  const selectClient = (client: string, isEdit: boolean = false) => {
+    if (isEdit) {
+      setEditJob({ ...editJob, client_name: client });
+      setShowEditClientDropdown(false);
+    } else {
+      setNewJob({ ...newJob, client_name: client });
+      setShowClientDropdown(false);
+    }
+    setFilteredClients([]);
+  };
+
+  const handleHelperInput = (value: string, isEdit: boolean = false) => {
+    if (isEdit) {
+      setEditLabor({ ...editLabor, helper_name: value });
+    } else {
+      setNewLabor({ ...newLabor, helper_name: value });
+    }
+
+    if (value.trim() === '') {
+      setFilteredHelpers([]);
+      if (isEdit) {
+        setShowEditHelperDropdown(false);
+      } else {
+        setShowHelperDropdown(false);
+      }
+    } else {
+      const filtered = existingHelpers.filter(helper =>
+        helper.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredHelpers(filtered);
+      if (isEdit) {
+        setShowEditHelperDropdown(true);
+      } else {
+        setShowHelperDropdown(true);
+      }
+    }
+  };
+
+  const selectHelper = (helper: string, isEdit: boolean = false) => {
+    if (isEdit) {
+      setEditLabor({ ...editLabor, helper_name: helper });
+      setShowEditHelperDropdown(false);
+    } else {
+      setNewLabor({ ...newLabor, helper_name: helper });
+      setShowHelperDropdown(false);
+    }
+    setFilteredHelpers([]);
+  };
+
+  const currentJob = jobs.find(j => j.id === selectedJob);
+  const currentYear = currentJob ? new Date(currentJob.job_date).getFullYear() : null;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-dark-gray">
+      {/* Header */}
+      <header className="bg-medium-gray border-b border-light-gray px-4 py-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-white">
+          Profit<span className="text-safety-orange">Level</span>
+        </h1>
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.push('/overhead')}
+            className="text-safety-orange font-semibold text-sm"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            🏢 Overhead
+          </button>
+          <button
+            onClick={() => router.push('/financials')}
+            className="text-safety-orange font-semibold text-sm"
           >
-            Documentation
-          </a>
+            📊 Financials
+          </button>
+          <button
+            onClick={() => router.push('/settings')}
+            className="text-safety-orange font-semibold text-sm"
+          >
+            ⚙️ Settings
+          </button>
         </div>
+      </header>
+
+      <main className="max-w-md mx-auto p-4">
+        {!selectedJob ? (
+          /* Job Dashboard */
+          <div>
+            <MonthOverviewCard />
+
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Jobs</h2>
+              <button
+                onClick={() => setShowAddJob(true)}
+                className="bg-safety-orange text-white px-4 py-2 rounded-lg font-semibold"
+              >
+                + Add Job
+              </button>
+            </div>
+
+            {showAddJob && (
+              <form onSubmit={addJob} className="bg-medium-gray p-4 rounded-lg mb-4">
+                <input
+                  type="text"
+                  placeholder="Job Name (e.g., 3 Dogwood)"
+                  value={newJob.name}
+                  onChange={(e) => setNewJob({ ...newJob, name: e.target.value })}
+                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                  required
+                />
+                <div className="relative mb-2">
+                  <input
+                    type="text"
+                    placeholder="Client Name (optional)"
+                    value={newJob.client_name}
+                    onChange={(e) => handleClientInput(e.target.value, false)}
+                    onFocus={() => {
+                      if (newJob.client_name.trim() !== '') {
+                        const filtered = existingClients.filter(client =>
+                          client.toLowerCase().includes(newJob.client_name.toLowerCase())
+                        );
+                        setFilteredClients(filtered);
+                        setShowClientDropdown(true);
+                      }
+                    }}
+                    className="w-full bg-light-gray text-white px-3 py-2 rounded"
+                  />
+                  {showClientDropdown && filteredClients.length > 0 && (
+                    <div className="absolute z-10 w-full bg-medium-gray border border-light-gray rounded mt-1 max-h-40 overflow-y-auto">
+                      {filteredClients.map((client) => (
+                        <div
+                          key={client}
+                          onClick={() => selectClient(client, false)}
+                          className="px-3 py-2 text-white hover:bg-light-gray cursor-pointer"
+                        >
+                          {client}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Contract Price"
+                  value={newJob.contract_price}
+                  onChange={(e) => setNewJob({ ...newJob, contract_price: e.target.value })}
+                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                  required
+                />
+                <input
+                  type="date"
+                  value={newJob.job_date}
+                  onChange={(e) => setNewJob({ ...newJob, job_date: e.target.value })}
+                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                  required
+                />
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Hours Spent (optional)"
+                  value={newJob.hours_spent}
+                  onChange={(e) => setNewJob({ ...newJob, hours_spent: e.target.value })}
+                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                />
+                <div className="flex gap-2">
+                  <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddJob(false)}
+                    className="flex-1 bg-light-gray text-white py-2 rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <div
+                  key={job.id}
+                  onClick={() => setSelectedJob(job.id)}
+                  className="bg-medium-gray p-4 rounded-lg cursor-pointer hover:bg-light-gray transition"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-white">{job.name}</h3>
+                      {job.client_name && (
+                        <div className="text-xs text-safety-orange">
+                          {job.client_name}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        {new Date(job.job_date).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-400">${job.contract_price.toFixed(2)}</span>
+                  </div>
+                  <div className="text-sm text-gray-400 space-y-1">
+                    <div>Materials: ${job.materials_total.toFixed(2)}</div>
+                    <div>Labor: ${job.labor_total.toFixed(2)}</div>
+                    <div>Mileage: ${job.mileage_total.toFixed(2)}</div>
+                    {job.hours_spent && (
+                      <div>Hours: {job.hours_spent.toFixed(1)}h</div>
+                    )}
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-light-gray">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-white font-semibold">Gross Profit:</span>
+                      <span className={`text-lg font-bold ${job.gross_profit >= 0 ? 'text-safety-orange' : 'text-red-500'}`}>
+                        ${job.gross_profit.toFixed(2)}
+                      </span>
+                    </div>
+                    {job.hours_spent && job.hours_spent > 0 && job.gross_hourly_rate && (
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-gray-400">Hourly Rate:</span>
+                        <span className="font-semibold text-white">
+                          ${job.gross_hourly_rate.toFixed(2)}/hr
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Job Details */
+          <div>
+            <button
+              onClick={() => setSelectedJob(null)}
+              className="mb-4 text-safety-orange font-semibold"
+            >
+              ← Back to Jobs
+            </button>
+
+            {currentJob && (
+              <>
+                {editingJob === currentJob.id ? (
+                  <form onSubmit={updateJob} className="bg-medium-gray p-4 rounded-lg mb-4">
+                    <input
+                      type="text"
+                      value={editJob.name}
+                      onChange={(e) => setEditJob({ ...editJob, name: e.target.value })}
+                      className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                      required
+                    />
+                    <div className="relative mb-2">
+                      <input
+                        type="text"
+                        placeholder="Client Name (optional)"
+                        value={editJob.client_name}
+                        onChange={(e) => handleClientInput(e.target.value, true)}
+                        onFocus={() => {
+                          if (editJob.client_name.trim() !== '') {
+                            const filtered = existingClients.filter(client =>
+                              client.toLowerCase().includes(editJob.client_name.toLowerCase())
+                            );
+                            setFilteredClients(filtered);
+                            setShowEditClientDropdown(true);
+                          }
+                        }}
+                        className="w-full bg-light-gray text-white px-3 py-2 rounded"
+                      />
+                      {showEditClientDropdown && filteredClients.length > 0 && (
+                        <div className="absolute z-10 w-full bg-medium-gray border border-light-gray rounded mt-1 max-h-40 overflow-y-auto">
+                          {filteredClients.map((client) => (
+                            <div
+                              key={client}
+                              onClick={() => selectClient(client, true)}
+                              className="px-3 py-2 text-white hover:bg-light-gray cursor-pointer"
+                            >
+                              {client}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editJob.contract_price}
+                      onChange={(e) => setEditJob({ ...editJob, contract_price: e.target.value })}
+                      className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                      required
+                    />
+                    <input
+                      type="date"
+                      value={editJob.job_date}
+                      onChange={(e) => setEditJob({ ...editJob, job_date: e.target.value })}
+                      className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                      required
+                    />
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Hours Spent (optional)"
+                      value={editJob.hours_spent}
+                      onChange={(e) => setEditJob({ ...editJob, hours_spent: e.target.value })}
+                      className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                    />
+                    <div className="flex gap-2">
+                      <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingJob(null)}
+                        className="flex-1 bg-light-gray text-white py-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="bg-medium-gray p-4 rounded-lg mb-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h2 className="text-2xl font-bold text-white">{currentJob.name}</h2>
+                        {currentJob.client_name && (
+                          <div className="text-sm text-safety-orange mt-1">
+                            {currentJob.client_name}
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-400 mt-1">
+                          {new Date(currentJob.job_date).toLocaleDateString()} ({currentYear})
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditJob(currentJob)}
+                          className="text-safety-orange text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteJob(currentJob.id)}
+                          className="text-red-500 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Contract Price:</span>
+                        <span className="text-white font-semibold">${currentJob.contract_price.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Direct Costs:</span>
+                        <span className="text-white">
+                          ${(currentJob.materials_total + currentJob.labor_total + currentJob.mileage_total).toFixed(2)}
+                        </span>
+                      </div>
+                      {currentJob.hours_spent && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Hours Spent:</span>
+                          <span className="text-white">{currentJob.hours_spent.toFixed(1)}h</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-light-gray space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white font-semibold text-lg">Gross Profit:</span>
+                        <span className={`text-2xl font-bold ${currentJob.gross_profit >= 0 ? 'text-safety-orange' : 'text-red-500'}`}>
+                          ${currentJob.gross_profit.toFixed(2)}
+                        </span>
+                      </div>
+                      {currentJob.hours_spent && currentJob.hours_spent > 0 && currentJob.gross_hourly_rate && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Hourly Rate:</span>
+                          <span className="text-xl font-bold text-white">
+                            ${currentJob.gross_hourly_rate.toFixed(2)}/hr
+                          </span>
+                        </div>
+                      )}
+                      {currentJob.contract_price > 0 && (
+                        <div className="text-xs text-gray-500 mt-2">
+                          Profit Margin: {((currentJob.gross_profit / currentJob.contract_price) * 100).toFixed(1)}%
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Materials Section */}
+                <div className="mb-6">
+                  <div className="bg-medium-gray p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          onClick={() => setShowMaterialsList(!showMaterialsList)}
+                          className="text-white"
+                        >
+                          <svg
+                            className={`w-5 h-5 transition-transform ${showMaterialsList ? 'rotate-90' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        <h3 className="text-lg font-bold text-white">Materials</h3>
+                        <span className="text-safety-orange font-semibold ml-2">
+                          ${currentJob.materials_total.toFixed(2)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowAddMaterial(true);
+                          setShowMaterialsList(true);
+                        }}
+                        className="bg-safety-orange text-white px-3 py-1 rounded text-sm font-semibold"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                  {showMaterialsList && (
+                    <>
+                      {showAddMaterial && (
+                        <form onSubmit={addMaterial} className="bg-light-gray p-4 rounded-lg mb-2 mt-2">
+                      <input
+                        type="text"
+                        placeholder="Item Name"
+                        value={newMaterial.item_name}
+                        onChange={(e) => setNewMaterial({ ...newMaterial, item_name: e.target.value })}
+                        className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                        required
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Cost"
+                        value={newMaterial.cost}
+                        onChange={(e) => setNewMaterial({ ...newMaterial, cost: e.target.value })}
+                        className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                        required
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Tax (optional)"
+                        value={newMaterial.tax}
+                        onChange={(e) => setNewMaterial({ ...newMaterial, tax: e.target.value })}
+                        className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                      />
+                      <div className="flex gap-2">
+                        <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddMaterial(false)}
+                          className="flex-1 bg-light-gray text-white py-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="space-y-2 mt-2">
+                    {materials.map((m) => (
+                      editingMaterial === m.id ? (
+                        <form key={m.id} onSubmit={updateMaterial} className="bg-medium-gray p-3 rounded">
+                          <input
+                            type="text"
+                            value={editMaterial.item_name}
+                            onChange={(e) => setEditMaterial({ ...editMaterial, item_name: e.target.value })}
+                            className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
+                            required
+                          />
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editMaterial.cost}
+                            onChange={(e) => setEditMaterial({ ...editMaterial, cost: e.target.value })}
+                            className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
+                            required
+                          />
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="Tax"
+                            value={editMaterial.tax}
+                            onChange={(e) => setEditMaterial({ ...editMaterial, tax: e.target.value })}
+                            className="w-full bg-light-gray text-white px-2 py-1 rounded mb-2 text-sm"
+                          />
+                          <div className="flex gap-2">
+                            <button type="submit" className="flex-1 bg-safety-orange text-white py-1 rounded text-sm">
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingMaterial(null)}
+                              className="flex-1 bg-light-gray text-white py-1 rounded text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div key={m.id} className="bg-medium-gray p-3 rounded">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex justify-between text-white">
+                                <span>{m.item_name}</span>
+                                <span>${(m.cost + m.tax).toFixed(2)}</span>
+                              </div>
+                              {m.tax > 0 && <div className="text-xs text-gray-400">Tax: ${m.tax.toFixed(2)}</div>}
+                            </div>
+                            <div className="flex gap-2 ml-2">
+                              <button
+                                onClick={() => startEditMaterial(m)}
+                                className="text-safety-orange text-xs"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteMaterial(m.id)}
+                                className="text-red-500 text-xs"
+                              >
+                                Del
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                  </>
+                  )}
+                  </div>
+                </div>
+
+                {/* Labor Section */}
+                <div className="mb-6">
+                  <div className="bg-medium-gray p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          onClick={() => setShowLaborList(!showLaborList)}
+                          className="text-white"
+                        >
+                          <svg
+                            className={`w-5 h-5 transition-transform ${showLaborList ? 'rotate-90' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        <h3 className="text-lg font-bold text-white">Labor</h3>
+                        <span className="text-safety-orange font-semibold ml-2">
+                          ${currentJob.labor_total.toFixed(2)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowAddLabor(true);
+                          setShowLaborList(true);
+                        }}
+                        className="bg-safety-orange text-white px-3 py-1 rounded text-sm font-semibold"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                  {showLaborList && (
+                    <>
+                      {showAddLabor && (
+                        <form onSubmit={addLabor} className="bg-light-gray p-4 rounded-lg mb-2 mt-2">
+                      <div className="relative mb-2">
+                        <input
+                          type="text"
+                          placeholder="Helper Name"
+                          value={newLabor.helper_name}
+                          onChange={(e) => handleHelperInput(e.target.value, false)}
+                          onFocus={() => {
+                            if (newLabor.helper_name.trim() !== '') {
+                              const filtered = existingHelpers.filter(helper =>
+                                helper.toLowerCase().includes(newLabor.helper_name.toLowerCase())
+                              );
+                              setFilteredHelpers(filtered);
+                              setShowHelperDropdown(true);
+                            }
+                          }}
+                          className="w-full bg-dark-gray text-white px-3 py-2 rounded"
+                          required
+                        />
+                        {showHelperDropdown && filteredHelpers.length > 0 && (
+                          <div className="absolute z-10 w-full bg-medium-gray border border-light-gray rounded mt-1 max-h-40 overflow-y-auto">
+                            {filteredHelpers.map((helper) => (
+                              <div
+                                key={helper}
+                                onClick={() => selectHelper(helper, false)}
+                                className="px-3 py-2 text-white hover:bg-light-gray cursor-pointer"
+                              >
+                                {helper}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="text-white text-sm font-semibold mb-2 block">Rate Type</label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center cursor-pointer">
+                            <input
+                              type="radio"
+                              name="rate_type"
+                              checked={!newLabor.is_flat_rate}
+                              onChange={() => setNewLabor({ ...newLabor, is_flat_rate: false })}
+                              className="mr-2"
+                            />
+                            <span className="text-white">Hourly</span>
+                          </label>
+                          <label className="flex items-center cursor-pointer">
+                            <input
+                              type="radio"
+                              name="rate_type"
+                              checked={newLabor.is_flat_rate}
+                              onChange={() => setNewLabor({ ...newLabor, is_flat_rate: true })}
+                              className="mr-2"
+                            />
+                            <span className="text-white">Flat Rate</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {!newLabor.is_flat_rate && (
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Hours"
+                          value={newLabor.hours}
+                          onChange={(e) => setNewLabor({ ...newLabor, hours: e.target.value })}
+                          className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
+                          required
+                        />
+                      )}
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder={newLabor.is_flat_rate ? "Flat Rate ($)" : "Rate ($/hr)"}
+                        value={newLabor.rate}
+                        onChange={(e) => setNewLabor({ ...newLabor, rate: e.target.value })}
+                        className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
+                        required
+                      />
+                      <div className="flex gap-2">
+                        <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddLabor(false)}
+                          className="flex-1 bg-light-gray text-white py-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="space-y-2">
+                    {labor.map((l) => (
+                      editingLabor === l.id ? (
+                        <form key={l.id} onSubmit={updateLabor} className="bg-medium-gray p-3 rounded">
+                          <div className="relative mb-1">
+                            <input
+                              type="text"
+                              value={editLabor.helper_name}
+                              onChange={(e) => handleHelperInput(e.target.value, true)}
+                              onFocus={() => {
+                                if (editLabor.helper_name.trim() !== '') {
+                                  const filtered = existingHelpers.filter(helper =>
+                                    helper.toLowerCase().includes(editLabor.helper_name.toLowerCase())
+                                  );
+                                  setFilteredHelpers(filtered);
+                                  setShowEditHelperDropdown(true);
+                                }
+                              }}
+                              className="w-full bg-light-gray text-white px-2 py-1 rounded text-sm"
+                              required
+                            />
+                            {showEditHelperDropdown && filteredHelpers.length > 0 && (
+                              <div className="absolute z-10 w-full bg-medium-gray border border-light-gray rounded mt-1 max-h-40 overflow-y-auto">
+                                {filteredHelpers.map((helper) => (
+                                  <div
+                                    key={helper}
+                                    onClick={() => selectHelper(helper, true)}
+                                    className="px-3 py-2 text-white hover:bg-light-gray cursor-pointer text-sm"
+                                  >
+                                    {helper}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mb-2">
+                            <label className="text-white text-xs font-semibold mb-1 block">Rate Type</label>
+                            <div className="flex gap-3">
+                              <label className="flex items-center cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="edit_rate_type"
+                                  checked={!editLabor.is_flat_rate}
+                                  onChange={() => setEditLabor({ ...editLabor, is_flat_rate: false })}
+                                  className="mr-1"
+                                />
+                                <span className="text-white text-xs">Hourly</span>
+                              </label>
+                              <label className="flex items-center cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="edit_rate_type"
+                                  checked={editLabor.is_flat_rate}
+                                  onChange={() => setEditLabor({ ...editLabor, is_flat_rate: true })}
+                                  className="mr-1"
+                                />
+                                <span className="text-white text-xs">Flat Rate</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {!editLabor.is_flat_rate && (
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="Hours"
+                              value={editLabor.hours}
+                              onChange={(e) => setEditLabor({ ...editLabor, hours: e.target.value })}
+                              className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
+                              required
+                            />
+                          )}
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder={editLabor.is_flat_rate ? "Flat Rate ($)" : "Rate ($/hr)"}
+                            value={editLabor.rate}
+                            onChange={(e) => setEditLabor({ ...editLabor, rate: e.target.value })}
+                            className="w-full bg-light-gray text-white px-2 py-1 rounded mb-2 text-sm"
+                            required
+                          />
+                          <div className="flex gap-2">
+                            <button type="submit" className="flex-1 bg-safety-orange text-white py-1 rounded text-sm">
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingLabor(null)}
+                              className="flex-1 bg-light-gray text-white py-1 rounded text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div key={l.id} className="bg-medium-gray p-3 rounded">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex justify-between text-white">
+                                <span>{l.helper_name}</span>
+                                <span>${l.is_flat_rate ? l.rate.toFixed(2) : (l.hours * l.rate).toFixed(2)}</span>
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {l.is_flat_rate ? 'Flat Rate' : `${l.hours}h × $${l.rate}/hr`}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-2">
+                              <button
+                                onClick={() => startEditLabor(l)}
+                                className="text-safety-orange text-xs"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteLabor(l.id)}
+                                className="text-red-500 text-xs"
+                              >
+                                Del
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                  </>
+                  )}
+                  </div>
+                </div>
+
+                {/* Mileage Section */}
+                <div className="mb-6">
+                  <div className="bg-medium-gray p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          onClick={() => setShowMileageList(!showMileageList)}
+                          className="text-white"
+                        >
+                          <svg
+                            className={`w-5 h-5 transition-transform ${showMileageList ? 'rotate-90' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        <h3 className="text-lg font-bold text-white">Mileage</h3>
+                        <span className="text-safety-orange font-semibold ml-2">
+                          ${currentJob.mileage_total.toFixed(2)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowAddMileage(true);
+                          setShowMileageList(true);
+                        }}
+                        className="bg-safety-orange text-white px-3 py-1 rounded text-sm font-semibold"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                  {showMileageList && (
+                    <>
+                      {showAddMileage && (
+                        <form onSubmit={addMileage} className="bg-light-gray p-4 rounded-lg mb-2 mt-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Miles"
+                        value={newMileage.miles}
+                        onChange={(e) => setNewMileage({ miles: e.target.value })}
+                        className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                        required
+                      />
+                      <div className="text-xs text-gray-400 mb-2">
+                        Rate for {currentYear}: Auto-calculated from IRS standards
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddMileage(false)}
+                          className="flex-1 bg-light-gray text-white py-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="space-y-2">
+                    {mileage.map((m) => (
+                      editingMileage === m.id ? (
+                        <form key={m.id} onSubmit={updateMileage} className="bg-medium-gray p-3 rounded">
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="Miles"
+                            value={editMileage.miles}
+                            onChange={(e) => setEditMileage({ miles: e.target.value })}
+                            className="w-full bg-light-gray text-white px-2 py-1 rounded mb-2 text-sm"
+                            required
+                          />
+                          <div className="flex gap-2">
+                            <button type="submit" className="flex-1 bg-safety-orange text-white py-1 rounded text-sm">
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingMileage(null)}
+                              className="flex-1 bg-light-gray text-white py-1 rounded text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div key={m.id} className="bg-medium-gray p-3 rounded">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex justify-between text-white">
+                                <span>{m.miles} miles</span>
+                                <span>${(m.miles * m.rate).toFixed(2)}</span>
+                              </div>
+                              <div className="text-xs text-gray-400">@${m.rate}/mile</div>
+                            </div>
+                            <div className="flex gap-2 ml-2">
+                              <button
+                                onClick={() => startEditMileage(m)}
+                                className="text-safety-orange text-xs"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteMileage(m.id)}
+                                className="text-red-500 text-xs"
+                              >
+                                Del
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                  </>
+                  )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* Floating Add Expense Button */}
+      <button
+        onClick={() => setShowAddExpenseModal(true)}
+        className="fixed bottom-6 right-6 bg-safety-orange text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold z-40 hover:bg-orange-600 transition"
+        aria-label="Add Expense"
+      >
+        +
+      </button>
+
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        isOpen={showAddExpenseModal}
+        onClose={() => setShowAddExpenseModal(false)}
+        onSuccess={() => {
+          fetchJobs();
+          if (selectedJob) fetchJobDetails(selectedJob);
+        }}
+      />
     </div>
   );
 }
