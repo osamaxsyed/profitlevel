@@ -53,10 +53,31 @@ export default function Home() {
   const [showEditHelperDropdown, setShowEditHelperDropdown] = useState(false);
   const [filteredHelpers, setFilteredHelpers] = useState<string[]>([]);
 
-  // Collapsible sections states
-  const [showMaterialsList, setShowMaterialsList] = useState(false);
-  const [showLaborList, setShowLaborList] = useState(false);
-  const [showMileageList, setShowMileageList] = useState(false);
+  // Collapsible sections states with localStorage persistence
+  const [showMaterialsList, setShowMaterialsList] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('showMaterialsList');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+  const [showLaborList, setShowLaborList] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('showLaborList');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+  const [showMileageList, setShowMileageList] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('showMileageList');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  // Form validation errors
+  const [jobErrors, setJobErrors] = useState({ name: '', contract_price: '', job_date: '' });
 
   useEffect(() => {
     fetchJobs();
@@ -64,6 +85,19 @@ export default function Home() {
     fetchExistingClients();
     fetchExistingHelpers();
   }, []);
+
+  // Persist collapsible states to localStorage
+  useEffect(() => {
+    localStorage.setItem('showMaterialsList', JSON.stringify(showMaterialsList));
+  }, [showMaterialsList]);
+
+  useEffect(() => {
+    localStorage.setItem('showLaborList', JSON.stringify(showLaborList));
+  }, [showLaborList]);
+
+  useEffect(() => {
+    localStorage.setItem('showMileageList', JSON.stringify(showMileageList));
+  }, [showMileageList]);
 
   useEffect(() => {
     if (selectedJob) {
@@ -119,8 +153,36 @@ export default function Home() {
     fetchExistingHelpers();
   };
 
+  const validateJobForm = () => {
+    const errors = { name: '', contract_price: '', job_date: '' };
+    let isValid = true;
+
+    if (!newJob.name.trim()) {
+      errors.name = 'Job name is required';
+      isValid = false;
+    }
+
+    if (!newJob.contract_price || parseFloat(newJob.contract_price) <= 0) {
+      errors.contract_price = 'Contract price must be greater than 0';
+      isValid = false;
+    }
+
+    if (!newJob.job_date) {
+      errors.job_date = 'Job date is required';
+      isValid = false;
+    }
+
+    setJobErrors(errors);
+    return isValid;
+  };
+
   const addJob = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateJobForm()) {
+      return;
+    }
+
     await fetch('/api/jobs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -133,6 +195,7 @@ export default function Home() {
       }),
     });
     setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+    setJobErrors({ name: '', contract_price: '', job_date: '' });
     setShowAddJob(false);
     fetchJobs();
   };
@@ -406,6 +469,19 @@ export default function Home() {
     setFilteredHelpers([]);
   };
 
+  // Keyboard navigation for dropdowns
+  const handleDropdownKeyDown = (e: React.KeyboardEvent, items: string[], onSelect: (item: string) => void, onClose: () => void) => {
+    if (e.key === 'Escape') {
+      onClose();
+    } else if (e.key === 'ArrowDown' && items.length > 0) {
+      e.preventDefault();
+      onSelect(items[0]);
+    } else if (e.key === 'Enter' && items.length > 0) {
+      e.preventDefault();
+      onSelect(items[0]);
+    }
+  };
+
   const currentJob = jobs.find(j => j.id === selectedJob);
   const currentYear = currentJob ? new Date(currentJob.job_date).getFullYear() : null;
 
@@ -456,14 +532,21 @@ export default function Home() {
 
             {showAddJob && (
               <form onSubmit={addJob} className="bg-medium-gray p-4 rounded-lg mb-4">
-                <input
-                  type="text"
-                  placeholder="Job Name (e.g., 3 Dogwood)"
-                  value={newJob.name}
-                  onChange={(e) => setNewJob({ ...newJob, name: e.target.value })}
-                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
-                  required
-                />
+                <div className="mb-2">
+                  <input
+                    type="text"
+                    placeholder="Job Name (e.g., 3 Dogwood)"
+                    value={newJob.name}
+                    onChange={(e) => {
+                      setNewJob({ ...newJob, name: e.target.value });
+                      if (jobErrors.name) setJobErrors({ ...jobErrors, name: '' });
+                    }}
+                    className={`w-full bg-light-gray text-white px-3 py-2 rounded ${jobErrors.name ? 'border-2 border-red-500' : ''}`}
+                  />
+                  {jobErrors.name && (
+                    <p className="text-red-500 text-xs mt-1">{jobErrors.name}</p>
+                  )}
+                </div>
                 <div className="relative mb-2">
                   <input
                     type="text"
@@ -479,6 +562,7 @@ export default function Home() {
                         setShowClientDropdown(true);
                       }
                     }}
+                    onKeyDown={(e) => handleDropdownKeyDown(e, filteredClients, (client) => selectClient(client, false), () => setShowClientDropdown(false))}
                     className="w-full bg-light-gray text-white px-3 py-2 rounded"
                   />
                   {showClientDropdown && filteredClients.length > 0 && (
@@ -495,22 +579,36 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Contract Price"
-                  value={newJob.contract_price}
-                  onChange={(e) => setNewJob({ ...newJob, contract_price: e.target.value })}
-                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
-                  required
-                />
-                <input
-                  type="date"
-                  value={newJob.job_date}
-                  onChange={(e) => setNewJob({ ...newJob, job_date: e.target.value })}
-                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
-                  required
-                />
+                <div className="mb-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Contract Price"
+                    value={newJob.contract_price}
+                    onChange={(e) => {
+                      setNewJob({ ...newJob, contract_price: e.target.value });
+                      if (jobErrors.contract_price) setJobErrors({ ...jobErrors, contract_price: '' });
+                    }}
+                    className={`w-full bg-light-gray text-white px-3 py-2 rounded ${jobErrors.contract_price ? 'border-2 border-red-500' : ''}`}
+                  />
+                  {jobErrors.contract_price && (
+                    <p className="text-red-500 text-xs mt-1">{jobErrors.contract_price}</p>
+                  )}
+                </div>
+                <div className="mb-2">
+                  <input
+                    type="date"
+                    value={newJob.job_date}
+                    onChange={(e) => {
+                      setNewJob({ ...newJob, job_date: e.target.value });
+                      if (jobErrors.job_date) setJobErrors({ ...jobErrors, job_date: '' });
+                    }}
+                    className={`w-full bg-light-gray text-white px-3 py-2 rounded ${jobErrors.job_date ? 'border-2 border-red-500' : ''}`}
+                  />
+                  {jobErrors.job_date && (
+                    <p className="text-red-500 text-xs mt-1">{jobErrors.job_date}</p>
+                  )}
+                </div>
                 <input
                   type="number"
                   step="0.1"
@@ -884,16 +982,16 @@ export default function Home() {
                               </div>
                               {m.tax > 0 && <div className="text-xs text-gray-400">Tax: ${m.tax.toFixed(2)}</div>}
                             </div>
-                            <div className="flex gap-2 ml-2">
+                            <div className="flex gap-1 ml-2">
                               <button
                                 onClick={() => startEditMaterial(m)}
-                                className="text-safety-orange text-xs"
+                                className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => deleteMaterial(m.id)}
-                                className="text-red-500 text-xs"
+                                className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Del
                               </button>
@@ -1147,16 +1245,16 @@ export default function Home() {
                                 {l.is_flat_rate ? 'Flat Rate' : `${l.hours}h × $${l.rate}/hr`}
                               </div>
                             </div>
-                            <div className="flex gap-2 ml-2">
+                            <div className="flex gap-1 ml-2">
                               <button
                                 onClick={() => startEditLabor(l)}
-                                className="text-safety-orange text-xs"
+                                className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => deleteLabor(l.id)}
-                                className="text-red-500 text-xs"
+                                className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Del
                               </button>
@@ -1272,16 +1370,16 @@ export default function Home() {
                               </div>
                               <div className="text-xs text-gray-400">@${m.rate}/mile</div>
                             </div>
-                            <div className="flex gap-2 ml-2">
+                            <div className="flex gap-1 ml-2">
                               <button
                                 onClick={() => startEditMileage(m)}
-                                className="text-safety-orange text-xs"
+                                className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => deleteMileage(m.id)}
-                                className="text-red-500 text-xs"
+                                className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Del
                               </button>

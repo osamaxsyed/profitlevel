@@ -270,16 +270,16 @@ export default function OverheadPage() {
                       <span>{new Date(exp.expense_date).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-2">
+                  <div className="flex gap-1 ml-2">
                     <button
                       onClick={() => startEdit(exp)}
-                      className="text-safety-orange text-xs"
+                      className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => deleteExpense(exp.id, exp.description)}
-                      className="text-red-500 text-xs"
+                      className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       Del
                     </button>
