@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { IRSRate } from '@/lib/types';
+import { toast } from 'sonner';
 
 export default function Settings() {
   const router = useRouter();
@@ -13,6 +14,9 @@ export default function Settings() {
   const [grossGoal, setGrossGoal] = useState('195');
   const [netGoal, setNetGoal] = useState('120');
   const [yearlyGoalHours, setYearlyGoalHours] = useState('2000');
+
+  const [isSavingGoals, setIsSavingGoals] = useState(false);
+  const [isAddingRate, setIsAddingRate] = useState(false);
 
   useEffect(() => {
     fetchRates();
@@ -35,31 +39,46 @@ export default function Settings() {
 
   const addRate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        year: parseInt(newRate.year),
-        rate: parseFloat(newRate.rate),
-      }),
-    });
-    setNewRate({ year: '', rate: '' });
-    setShowAddRate(false);
-    fetchRates();
+    setIsAddingRate(true);
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year: parseInt(newRate.year),
+          rate: parseFloat(newRate.rate),
+        }),
+      });
+      setNewRate({ year: '', rate: '' });
+      setShowAddRate(false);
+      fetchRates();
+      toast.success('IRS rate added successfully');
+    } catch (error) {
+      toast.error('Failed to add IRS rate');
+    } finally {
+      setIsAddingRate(false);
+    }
   };
 
   const updateGoals = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/settings/goals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gross_hourly_goal: parseFloat(grossGoal),
-        net_hourly_goal: parseFloat(netGoal),
-        yearly_goal_hours: parseFloat(yearlyGoalHours),
-      }),
-    });
-    alert('Goals updated successfully!');
+    setIsSavingGoals(true);
+    try {
+      await fetch('/api/settings/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gross_hourly_goal: parseFloat(grossGoal),
+          net_hourly_goal: parseFloat(netGoal),
+          yearly_goal_hours: parseFloat(yearlyGoalHours),
+        }),
+      });
+      toast.success('Goals updated successfully!');
+    } catch (error) {
+      toast.error('Failed to update goals');
+    } finally {
+      setIsSavingGoals(false);
+    }
   };
 
   return (
@@ -147,8 +166,12 @@ export default function Settings() {
                 Used to calculate hourly burden rate: Total Yearly Overhead / Goal Hours
               </div>
             </div>
-            <button type="submit" className="w-full bg-safety-orange text-white py-2 rounded font-semibold">
-              Save Goals
+            <button
+              type="submit"
+              disabled={isSavingGoals}
+              className="w-full bg-safety-orange text-white py-2 rounded font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSavingGoals ? 'Saving...' : 'Save Goals'}
             </button>
           </form>
           <div className="mt-4 text-xs text-gray-400">
@@ -199,13 +222,18 @@ export default function Settings() {
                 min="0"
               />
               <div className="flex gap-2">
-                <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
-                  Save
+                <button
+                  type="submit"
+                  disabled={isAddingRate}
+                  className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAddingRate ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddRate(false)}
-                  className="flex-1 bg-light-gray text-white py-2 rounded"
+                  disabled={isAddingRate}
+                  className="flex-1 bg-light-gray text-white py-2 rounded disabled:opacity-50"
                 >
                   Cancel
                 </button>

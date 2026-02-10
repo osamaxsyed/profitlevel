@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Overhead } from '@/lib/types';
+import { toast } from 'sonner';
 
 export default function OverheadPage() {
   const router = useRouter();
@@ -76,10 +77,15 @@ export default function OverheadPage() {
     fetchOverhead();
   };
 
-  const deleteExpense = async (id: number) => {
-    if (!confirm('Delete this expense?')) return;
-    await fetch(`/api/overhead/${id}`, { method: 'DELETE' });
-    fetchOverhead();
+  const deleteExpense = async (id: number, description: string) => {
+    if (!confirm(`Delete "${description}"?`)) return;
+    try {
+      await fetch(`/api/overhead/${id}`, { method: 'DELETE' });
+      fetchOverhead();
+      toast.success('Expense deleted');
+    } catch (error) {
+      toast.error('Failed to delete expense');
+    }
   };
 
   const startEdit = (exp: Overhead) => {
@@ -272,7 +278,7 @@ export default function OverheadPage() {
                       Edit
                     </button>
                     <button
-                      onClick={() => deleteExpense(exp.id)}
+                      onClick={() => deleteExpense(exp.id, exp.description)}
                       className="text-red-500 text-xs"
                     >
                       Del

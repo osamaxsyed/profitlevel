@@ -535,12 +535,25 @@ export default function Home() {
             )}
 
             <div className="space-y-3">
-              {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  onClick={() => setSelectedJob(job.id)}
-                  className="bg-medium-gray p-4 rounded-lg cursor-pointer hover:bg-light-gray transition"
-                >
+              {jobs.length === 0 && !showAddJob ? (
+                <div className="bg-medium-gray p-8 rounded-lg text-center">
+                  <div className="text-4xl mb-4">📋</div>
+                  <h3 className="text-xl font-bold text-white mb-2">No Jobs Yet</h3>
+                  <p className="text-gray-400 mb-4">Get started by adding your first job</p>
+                  <button
+                    onClick={() => setShowAddJob(true)}
+                    className="bg-safety-orange text-white px-6 py-2 rounded-lg font-semibold"
+                  >
+                    + Add Your First Job
+                  </button>
+                </div>
+              ) : (
+                jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    onClick={() => setSelectedJob(job.id)}
+                    className="bg-medium-gray p-4 rounded-lg cursor-pointer hover:bg-light-gray transition"
+                  >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-lg font-bold text-white">{job.name}</h3>
@@ -580,7 +593,8 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         ) : (
