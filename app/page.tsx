@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { JobWithCosts, Material, Labor, Mileage } from '@/lib/types';
 import MonthOverviewCard from './components/MonthOverview';
-import { getProfitColor } from '@/lib/utils';
+import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
 import AddExpenseModal from './components/AddExpenseModal';
 
 export default function Home() {
@@ -78,6 +78,9 @@ export default function Home() {
 
   // Form validation errors
   const [jobErrors, setJobErrors] = useState({ name: '', contract_price: '', job_date: '' });
+
+  // Search/filter state
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchJobs();
@@ -183,6 +186,28 @@ export default function Home() {
       return;
     }
 
+    // Optimistic update - add temporary job immediately
+    const tempJob: JobWithCosts = {
+      id: Date.now(), // Temporary ID
+      name: newJob.name,
+      client_name: newJob.client_name || null,
+      contract_price: parseFloat(newJob.contract_price),
+      job_date: newJob.job_date,
+      hours_spent: newJob.hours_spent ? parseFloat(newJob.hours_spent) : null,
+      total_material_cost: 0,
+      total_labor_cost: 0,
+      total_mileage_cost: 0,
+      gross_profit: parseFloat(newJob.contract_price),
+      net_profit: parseFloat(newJob.contract_price),
+      gross_hourly: newJob.hours_spent ? parseFloat(newJob.contract_price) / parseFloat(newJob.hours_spent) : null,
+      net_hourly: newJob.hours_spent ? parseFloat(newJob.contract_price) / parseFloat(newJob.hours_spent) : null,
+    };
+    setJobs([tempJob, ...jobs]);
+    setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+    setJobErrors({ name: '', contract_price: '', job_date: '' });
+    setShowAddJob(false);
+
+    // Actual API call
     await fetch('/api/jobs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -194,9 +219,6 @@ export default function Home() {
         hours_spent: newJob.hours_spent ? parseFloat(newJob.hours_spent) : null,
       }),
     });
-    setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
-    setJobErrors({ name: '', contract_price: '', job_date: '' });
-    setShowAddJob(false);
     fetchJobs();
   };
 
@@ -221,8 +243,13 @@ export default function Home() {
 
   const deleteJob = async (id: number) => {
     if (!confirm('Delete this job and all associated data?')) return;
-    await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
+
+    // Optimistic update - remove job immediately
+    setJobs(jobs.filter(job => job.id !== id));
     setSelectedJob(null);
+
+    // Actual API call
+    await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
     fetchJobs();
   };
 
@@ -265,6 +292,11 @@ export default function Home() {
 
   const deleteMaterial = async (id: number) => {
     if (!confirm('Delete this material entry?')) return;
+
+    // Optimistic update - remove material immediately
+    setMaterials(materials.filter(m => m.id !== id));
+
+    // Actual API call
     await fetch(`/api/materials/${id}`, { method: 'DELETE' });
     fetchJobs();
     if (selectedJob) fetchJobDetails(selectedJob);
@@ -311,6 +343,11 @@ export default function Home() {
 
   const deleteLabor = async (id: number) => {
     if (!confirm('Delete this labor entry?')) return;
+
+    // Optimistic update - remove labor immediately
+    setLabor(labor.filter(l => l.id !== id));
+
+    // Actual API call
     await fetch(`/api/labor/${id}`, { method: 'DELETE' });
     fetchJobs();
     if (selectedJob) fetchJobDetails(selectedJob);
@@ -351,6 +388,11 @@ export default function Home() {
 
   const deleteMileage = async (id: number) => {
     if (!confirm('Delete this mileage entry?')) return;
+
+    // Optimistic update - remove mileage immediately
+    setMileage(mileage.filter(m => m.id !== id));
+
+    // Actual API call
     await fetch(`/api/mileage/${id}`, { method: 'DELETE' });
     fetchJobs();
     if (selectedJob) fetchJobDetails(selectedJob);
@@ -485,50 +527,75 @@ export default function Home() {
   const currentJob = jobs.find(j => j.id === selectedJob);
   const currentYear = currentJob ? new Date(currentJob.job_date).getFullYear() : null;
 
+  // Filter jobs based on search query
+  const filteredJobs = jobs.filter(job => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      job.name.toLowerCase().includes(query) ||
+      (job.client_name && job.client_name.toLowerCase().includes(query))
+    );
+  });
+
   return (
     <div className="min-h-screen bg-dark-gray">
       {/* Header */}
-      <header className="bg-medium-gray border-b border-light-gray px-4 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">
-          Profit<span className="text-safety-orange">Level</span>
-        </h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => router.push('/overhead')}
-            className="text-safety-orange font-semibold text-sm"
-          >
-            🏢 Overhead
-          </button>
-          <button
-            onClick={() => router.push('/financials')}
-            className="text-safety-orange font-semibold text-sm"
-          >
-            📊 Financials
-          </button>
-          <button
-            onClick={() => router.push('/settings')}
-            className="text-safety-orange font-semibold text-sm"
-          >
-            ⚙️ Settings
-          </button>
+      <header className="bg-medium-gray border-b border-light-gray px-4 py-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl sm:text-2xl font-bold text-white">
+            Profit<span className="text-safety-orange">Level</span>
+          </h1>
+          <div className="flex gap-2 sm:gap-3">
+            <button
+              onClick={() => router.push('/overhead')}
+              className="text-safety-orange font-semibold text-xs sm:text-sm"
+            >
+              <span className="hidden xs:inline">🏢 </span>Overhead
+            </button>
+            <button
+              onClick={() => router.push('/financials')}
+              className="text-safety-orange font-semibold text-xs sm:text-sm"
+            >
+              <span className="hidden xs:inline">📊 </span>Financials
+            </button>
+            <button
+              onClick={() => router.push('/settings')}
+              className="text-safety-orange font-semibold text-xs sm:text-sm"
+            >
+              <span className="hidden xs:inline">⚙️ </span>Settings
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-md mx-auto p-4">
+      <main className="max-w-md mx-auto p-3 sm:p-4">
         {!selectedJob ? (
           /* Job Dashboard */
           <div>
             <MonthOverviewCard />
 
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Jobs</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-white">Jobs</h2>
               <button
                 onClick={() => setShowAddJob(true)}
-                className="bg-safety-orange text-white px-4 py-2 rounded-lg font-semibold"
+                className="bg-safety-orange text-white px-3 py-2 sm:px-4 rounded-lg font-semibold text-sm sm:text-base"
               >
                 + Add Job
               </button>
             </div>
+
+            {/* Search Jobs */}
+            {jobs.length > 0 && (
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="🔍 Search jobs by name or client..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-medium-gray text-white px-4 py-2 rounded-lg border border-light-gray focus:border-safety-orange focus:outline-none"
+                />
+              </div>
+            )}
 
             {showAddJob && (
               <form onSubmit={addJob} className="bg-medium-gray p-4 rounded-lg mb-4">
@@ -645,16 +712,28 @@ export default function Home() {
                     + Add Your First Job
                   </button>
                 </div>
+              ) : filteredJobs.length === 0 ? (
+                <div className="bg-medium-gray p-8 rounded-lg text-center">
+                  <div className="text-4xl mb-4">🔍</div>
+                  <h3 className="text-xl font-bold text-white mb-2">No Jobs Found</h3>
+                  <p className="text-gray-400 mb-4">No jobs match your search criteria</p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="bg-safety-orange text-white px-6 py-2 rounded-lg font-semibold"
+                  >
+                    Clear Search
+                  </button>
+                </div>
               ) : (
-                jobs.map((job) => (
+                filteredJobs.map((job) => (
                   <div
                     key={job.id}
                     onClick={() => setSelectedJob(job.id)}
-                    className="bg-medium-gray p-4 rounded-lg cursor-pointer hover:bg-light-gray transition"
+                    className="bg-medium-gray p-3 sm:p-4 rounded-lg cursor-pointer hover:bg-light-gray transition"
                   >
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="text-lg font-bold text-white">{job.name}</h3>
+                      <h3 className="text-base sm:text-lg font-bold text-white">{job.name}</h3>
                       {job.client_name && (
                         <div className="text-xs text-safety-orange">
                           {job.client_name}
@@ -664,28 +743,28 @@ export default function Home() {
                         {new Date(job.job_date).toLocaleDateString()}
                       </div>
                     </div>
-                    <span className="text-sm text-gray-400">${job.contract_price.toFixed(2)}</span>
+                    <span className="text-sm text-gray-400">{formatCurrency(job.contract_price)}</span>
                   </div>
                   <div className="text-sm text-gray-400 space-y-1">
-                    <div>Materials: ${job.materials_total.toFixed(2)}</div>
-                    <div>Labor: ${job.labor_total.toFixed(2)}</div>
-                    <div>Mileage: ${job.mileage_total.toFixed(2)}</div>
+                    <div>Materials: {formatCurrency(job.materials_total)}</div>
+                    <div>Labor: {formatCurrency(job.labor_total)}</div>
+                    <div>Mileage: {formatCurrency(job.mileage_total)}</div>
                     {job.hours_spent && (
-                      <div>Hours: {job.hours_spent.toFixed(1)}h</div>
+                      <div>Hours: {formatHours(job.hours_spent)}</div>
                     )}
                   </div>
                   <div className="mt-2 pt-2 border-t border-light-gray">
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-white font-semibold">Gross Profit:</span>
                       <span className={`text-lg font-bold ${job.gross_profit >= 0 ? 'text-safety-orange' : 'text-red-500'}`}>
-                        ${job.gross_profit.toFixed(2)}
+                        {formatCurrency(job.gross_profit)}
                       </span>
                     </div>
                     {job.hours_spent && job.hours_spent > 0 && job.gross_hourly_rate && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-400">Hourly Rate:</span>
                         <span className="font-semibold text-white">
-                          ${job.gross_hourly_rate.toFixed(2)}/hr
+                          {formatCurrency(job.gross_hourly_rate)}/hr
                         </span>
                       </div>
                     )}
@@ -815,18 +894,18 @@ export default function Home() {
                     <div className="mt-3 space-y-1">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Contract Price:</span>
-                        <span className="text-white font-semibold">${currentJob.contract_price.toFixed(2)}</span>
+                        <span className="text-white font-semibold">{formatCurrency(currentJob.contract_price)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Direct Costs:</span>
                         <span className="text-white">
-                          ${(currentJob.materials_total + currentJob.labor_total + currentJob.mileage_total).toFixed(2)}
+                          {formatCurrency(currentJob.materials_total + currentJob.labor_total + currentJob.mileage_total)}
                         </span>
                       </div>
                       {currentJob.hours_spent && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-400">Hours Spent:</span>
-                          <span className="text-white">{currentJob.hours_spent.toFixed(1)}h</span>
+                          <span className="text-white">{formatHours(currentJob.hours_spent)}</span>
                         </div>
                       )}
                     </div>
@@ -834,20 +913,20 @@ export default function Home() {
                       <div className="flex justify-between items-center">
                         <span className="text-white font-semibold text-lg">Gross Profit:</span>
                         <span className={`text-2xl font-bold ${currentJob.gross_profit >= 0 ? 'text-safety-orange' : 'text-red-500'}`}>
-                          ${currentJob.gross_profit.toFixed(2)}
+                          {formatCurrency(currentJob.gross_profit)}
                         </span>
                       </div>
                       {currentJob.hours_spent && currentJob.hours_spent > 0 && currentJob.gross_hourly_rate && (
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400">Hourly Rate:</span>
                           <span className="text-xl font-bold text-white">
-                            ${currentJob.gross_hourly_rate.toFixed(2)}/hr
+                            {formatCurrency(currentJob.gross_hourly_rate)}/hr
                           </span>
                         </div>
                       )}
                       {currentJob.contract_price > 0 && (
                         <div className="text-xs text-gray-500 mt-2">
-                          Profit Margin: {((currentJob.gross_profit / currentJob.contract_price) * 100).toFixed(1)}%
+                          Profit Margin: {formatNumber((currentJob.gross_profit / currentJob.contract_price) * 100, 1)}%
                         </div>
                       )}
                     </div>
@@ -874,7 +953,7 @@ export default function Home() {
                         </button>
                         <h3 className="text-lg font-bold text-white">Materials</h3>
                         <span className="text-safety-orange font-semibold ml-2">
-                          ${currentJob.materials_total.toFixed(2)}
+                          {formatCurrency(currentJob.materials_total)}
                         </span>
                       </div>
                       <button
@@ -978,9 +1057,9 @@ export default function Home() {
                             <div className="flex-1">
                               <div className="flex justify-between text-white">
                                 <span>{m.item_name}</span>
-                                <span>${(m.cost + m.tax).toFixed(2)}</span>
+                                <span>{formatCurrency(m.cost + m.tax)}</span>
                               </div>
-                              {m.tax > 0 && <div className="text-xs text-gray-400">Tax: ${m.tax.toFixed(2)}</div>}
+                              {m.tax > 0 && <div className="text-xs text-gray-400">Tax: {formatCurrency(m.tax)}</div>}
                             </div>
                             <div className="flex gap-1 ml-2">
                               <button
@@ -1026,7 +1105,7 @@ export default function Home() {
                         </button>
                         <h3 className="text-lg font-bold text-white">Labor</h3>
                         <span className="text-safety-orange font-semibold ml-2">
-                          ${currentJob.labor_total.toFixed(2)}
+                          {formatCurrency(currentJob.labor_total)}
                         </span>
                       </div>
                       <button
@@ -1239,10 +1318,10 @@ export default function Home() {
                             <div className="flex-1">
                               <div className="flex justify-between text-white">
                                 <span>{l.helper_name}</span>
-                                <span>${l.is_flat_rate ? l.rate.toFixed(2) : (l.hours * l.rate).toFixed(2)}</span>
+                                <span>{formatCurrency(l.is_flat_rate ? l.rate : l.hours * l.rate)}</span>
                               </div>
                               <div className="text-xs text-gray-400">
-                                {l.is_flat_rate ? 'Flat Rate' : `${l.hours}h × $${l.rate}/hr`}
+                                {l.is_flat_rate ? 'Flat Rate' : `${formatNumber(l.hours, 1)}h × ${formatCurrency(l.rate)}/hr`}
                               </div>
                             </div>
                             <div className="flex gap-1 ml-2">
@@ -1289,7 +1368,7 @@ export default function Home() {
                         </button>
                         <h3 className="text-lg font-bold text-white">Mileage</h3>
                         <span className="text-safety-orange font-semibold ml-2">
-                          ${currentJob.mileage_total.toFixed(2)}
+                          {formatCurrency(currentJob.mileage_total)}
                         </span>
                       </div>
                       <button
@@ -1365,10 +1444,10 @@ export default function Home() {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex justify-between text-white">
-                                <span>{m.miles} miles</span>
-                                <span>${(m.miles * m.rate).toFixed(2)}</span>
+                                <span>{formatNumber(m.miles, 1)} miles</span>
+                                <span>{formatCurrency(m.miles * m.rate)}</span>
                               </div>
-                              <div className="text-xs text-gray-400">@${m.rate}/mile</div>
+                              <div className="text-xs text-gray-400">@{formatCurrency(m.rate)}/mile</div>
                             </div>
                             <div className="flex gap-1 ml-2">
                               <button

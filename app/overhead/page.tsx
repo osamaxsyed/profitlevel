@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Overhead } from '@/lib/types';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 
 export default function OverheadPage() {
   const router = useRouter();
@@ -150,7 +151,7 @@ export default function OverheadPage() {
 
         <div className="bg-medium-gray p-4 rounded-lg mb-4">
           <div className="text-gray-400 text-sm">Total Overhead ({new Date(selectedMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })})</div>
-          <div className="text-safety-orange text-3xl font-bold">${totalOverhead.toFixed(2)}</div>
+          <div className="text-safety-orange text-3xl font-bold">{formatCurrency(totalOverhead)}</div>
         </div>
 
         <div className="flex items-center justify-between mb-4">
@@ -263,7 +264,7 @@ export default function OverheadPage() {
                   <div className="flex-1">
                     <div className="flex justify-between text-white">
                       <span className="font-semibold">{exp.description}</span>
-                      <span className="text-safety-orange">${exp.amount.toFixed(2)}</span>
+                      <span className="text-safety-orange">{formatCurrency(exp.amount)}</span>
                     </div>
                     <div className="text-xs text-gray-400 mt-1">
                       {exp.category && <span className="mr-2">📁 {exp.category}</span>}
