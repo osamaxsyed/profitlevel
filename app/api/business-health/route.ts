@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       args: [month]
     });
 
-    const jobStats = jobStatsResult.rows[0] as {
+    const jobStats = jobStatsResult.rows[0] as unknown as {
       total_revenue: number;
       total_billable_hours: number;
       job_count: number;
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       args: [month]
     });
 
-    const materialsTotal = materialsTotalResult.rows[0] as { total: number };
+    const materialsTotal = materialsTotalResult.rows[0] as unknown as { total: number };
 
     // Get monthly expenses (labor)
     const laborTotalResult = await db.execute({
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       args: [month]
     });
 
-    const laborTotal = laborTotalResult.rows[0] as { total: number };
+    const laborTotal = laborTotalResult.rows[0] as unknown as { total: number };
 
     // Get monthly expenses (mileage)
     const mileageTotalResult = await db.execute({
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       args: [month]
     });
 
-    const mileageTotal = mileageTotalResult.rows[0] as { total: number };
+    const mileageTotal = mileageTotalResult.rows[0] as unknown as { total: number };
 
     // Get monthly overhead
     const overheadResultQuery = await db.execute({
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       args: [month]
     });
 
-    const overheadResult = overheadResultQuery.rows[0] as { total: number };
+    const overheadResult = overheadResultQuery.rows[0] as unknown as { total: number };
 
     // Calculate totals
     const totalExpenses = materialsTotal.total + laborTotal.total + mileageTotal.total + overheadResult.total;
