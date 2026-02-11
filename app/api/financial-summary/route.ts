@@ -1,31 +1,33 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserId } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const year = searchParams.get('year');
     const month = searchParams.get('month'); // Optional: YYYY-MM format
 
     // Get yearly goal hours for burden rate calculation
     const yearlyGoalHoursResult = await db.execute({
-      sql: 'SELECT value FROM settings WHERE key = ?',
-      args: ['yearly_goal_hours']
+      sql: 'SELECT value FROM settings WHERE key = ? AND user_id = ?',
+      args: ['yearly_goal_hours', userId]
     });
     const yearlyGoalHoursSetting = yearlyGoalHoursResult.rows[0] as unknown as { value: string } | undefined;
     const yearlyGoalHours = yearlyGoalHoursSetting ? parseFloat(yearlyGoalHoursSetting.value) : 2000;
 
     let dateFilter = '';
-    let params: any[] = [];
+    let params: any[] = [userId];
     let periodLabel = 'All Time';
 
     if (month) {
-      dateFilter = `WHERE strftime('%Y-%m', job_date) = ?`;
-      params = [month];
+      dateFilter = `AND strftime('%Y-%m', job_date) = ?`;
+      params.push(month);
       periodLabel = month;
     } else if (year) {
-      dateFilter = `WHERE strftime('%Y', job_date) = ?`;
-      params = [year];
+      dateFilter = `AND strftime('%Y', job_date) = ?`;
+      params.push(year);
       periodLabel = year;
     }
     // If neither month nor year provided, no filter = all time
@@ -37,7 +39,7 @@ export async function GET(request: Request) {
         COALESCE(SUM(hours_spent), 0) as total_billable_hours,
         COUNT(id) as job_count
       FROM jobs
-      ${dateFilter}`,
+      WHERE user_id = ? ${dateFilter}`,
       args: params
     });
 
@@ -49,19 +51,20 @@ export async function GET(request: Request) {
 
     // Calculate materials total with proper filtering
     let materialsFilter = '';
-    let materialsParams: any[] = [];
+    let materialsParams: any[] = [userId];
     if (month) {
-      materialsFilter = `WHERE strftime('%Y-%m', (SELECT job_date FROM jobs WHERE jobs.id = materials.job_id)) = ?`;
-      materialsParams = [month];
+      materialsFilter = `AND strftime('%Y-%m', j.job_date) = ?`;
+      materialsParams.push(month);
     } else if (year) {
-      materialsFilter = `WHERE strftime('%Y', (SELECT job_date FROM jobs WHERE jobs.id = materials.job_id)) = ?`;
-      materialsParams = [year];
+      materialsFilter = `AND strftime('%Y', j.job_date) = ?`;
+      materialsParams.push(year);
     }
 
     const materialsTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(cost + tax), 0) as total
-      FROM materials
-      ${materialsFilter}`,
+      sql: `SELECT COALESCE(SUM(m.cost + m.tax), 0) as total
+      FROM materials m
+      INNER JOIN jobs j ON m.job_id = j.id
+      WHERE j.user_id = ? ${materialsFilter}`,
       args: materialsParams
     });
 
@@ -69,19 +72,20 @@ export async function GET(request: Request) {
 
     // Calculate labor total with proper filtering and flat rate handling
     let laborFilter = '';
-    let laborParams: any[] = [];
+    let laborParams: any[] = [userId];
     if (month) {
-      laborFilter = `WHERE strftime('%Y-%m', (SELECT job_date FROM jobs WHERE jobs.id = labor.job_id)) = ?`;
-      laborParams = [month];
+      laborFilter = `AND strftime('%Y-%m', j.job_date) = ?`;
+      laborParams.push(month);
     } else if (year) {
-      laborFilter = `WHERE strftime('%Y', (SELECT job_date FROM jobs WHERE jobs.id = labor.job_id)) = ?`;
-      laborParams = [year];
+      laborFilter = `AND strftime('%Y', j.job_date) = ?`;
+      laborParams.push(year);
     }
 
     const laborTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END), 0) as total
-      FROM labor
-      ${laborFilter}`,
+      sql: `SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) as total
+      FROM labor l
+      INNER JOIN jobs j ON l.job_id = j.id
+      WHERE j.user_id = ? ${laborFilter}`,
       args: laborParams
     });
 
@@ -89,19 +93,20 @@ export async function GET(request: Request) {
 
     // Calculate mileage total with proper filtering
     let mileageFilter = '';
-    let mileageParams: any[] = [];
+    let mileageParams: any[] = [userId];
     if (month) {
-      mileageFilter = `WHERE strftime('%Y-%m', (SELECT job_date FROM jobs WHERE jobs.id = mileage.job_id)) = ?`;
-      mileageParams = [month];
+      mileageFilter = `AND strftime('%Y-%m', j.job_date) = ?`;
+      mileageParams.push(month);
     } else if (year) {
-      mileageFilter = `WHERE strftime('%Y', (SELECT job_date FROM jobs WHERE jobs.id = mileage.job_id)) = ?`;
-      mileageParams = [year];
+      mileageFilter = `AND strftime('%Y', j.job_date) = ?`;
+      mileageParams.push(year);
     }
 
     const mileageTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(miles * rate), 0) as total
-      FROM mileage
-      ${mileageFilter}`,
+      sql: `SELECT COALESCE(SUM(m.miles * m.rate), 0) as total
+      FROM mileage m
+      INNER JOIN jobs j ON m.job_id = j.id
+      WHERE j.user_id = ? ${mileageFilter}`,
       args: mileageParams
     });
 
@@ -109,21 +114,21 @@ export async function GET(request: Request) {
 
     // Calculate overhead for the period
     let overheadFilter = '';
-    let overheadParams: any[] = [];
+    let overheadParams: any[] = [userId];
 
     if (month) {
-      overheadFilter = `WHERE strftime('%Y-%m', expense_date) = ?`;
-      overheadParams = [month];
+      overheadFilter = `AND strftime('%Y-%m', expense_date) = ?`;
+      overheadParams.push(month);
     } else if (year) {
-      overheadFilter = `WHERE strftime('%Y', expense_date) = ?`;
-      overheadParams = [year];
+      overheadFilter = `AND strftime('%Y', expense_date) = ?`;
+      overheadParams.push(year);
     }
     // If neither, no filter = all time
 
     const overheadStatsResult = await db.execute({
       sql: `SELECT COALESCE(SUM(amount), 0) as total_overhead
       FROM overhead
-      ${overheadFilter}`,
+      WHERE user_id = ? ${overheadFilter}`,
       args: overheadParams
     });
 
@@ -131,18 +136,18 @@ export async function GET(request: Request) {
 
     // Calculate YTD overhead for burden rate (or all time if no year specified)
     let ytdOverheadQuery = '';
-    let ytdOverheadParams: any[] = [];
+    let ytdOverheadParams: any[] = [userId];
 
     if (year) {
-      ytdOverheadQuery = `WHERE strftime('%Y', expense_date) = ?`;
-      ytdOverheadParams = [year];
+      ytdOverheadQuery = `AND strftime('%Y', expense_date) = ?`;
+      ytdOverheadParams.push(year);
     }
     // If no year, calculate from all time
 
     const ytdOverheadResult = await db.execute({
       sql: `SELECT COALESCE(SUM(amount), 0) as total
       FROM overhead
-      ${ytdOverheadQuery}`,
+      WHERE user_id = ? ${ytdOverheadQuery}`,
       args: ytdOverheadParams
     });
 

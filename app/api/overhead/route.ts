@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Overhead } from '@/lib/types';
+import { getUserId } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month'); // Format: YYYY-MM
 
@@ -12,13 +14,16 @@ export async function GET(request: Request) {
       // Get overhead for specific month
       result = await db.execute({
         sql: `SELECT * FROM overhead
-              WHERE strftime('%Y-%m', expense_date) = ?
+              WHERE user_id = ? AND strftime('%Y-%m', expense_date) = ?
               ORDER BY expense_date DESC`,
-        args: [month]
+        args: [userId, month]
       });
     } else {
       // Get all overhead
-      result = await db.execute('SELECT * FROM overhead ORDER BY expense_date DESC');
+      result = await db.execute({
+        sql: 'SELECT * FROM overhead WHERE user_id = ? ORDER BY expense_date DESC',
+        args: [userId]
+      });
     }
 
     const overhead = result.rows as unknown as Overhead[];
@@ -31,6 +36,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { description, amount, category, expense_date } = body;
 
@@ -42,8 +48,8 @@ export async function POST(request: Request) {
     }
 
     const result = await db.execute({
-      sql: 'INSERT INTO overhead (description, amount, category, expense_date) VALUES (?, ?, ?, ?)',
-      args: [description, amount, category || null, expense_date]
+      sql: 'INSERT INTO overhead (description, amount, category, expense_date, user_id) VALUES (?, ?, ?, ?, ?)',
+      args: [description, amount, category || null, expense_date, userId]
     });
 
     const overheadResult = await db.execute({

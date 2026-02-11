@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserId } from '@/lib/auth';
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getUserId();
     const { id } = await params;
-    await db.execute({
-      sql: 'DELETE FROM jobs WHERE id = ?',
+
+    // Verify ownership
+    const job = await db.execute({
+      sql: 'SELECT user_id FROM jobs WHERE id = ?',
       args: [id],
+    });
+
+    if (job.rows.length === 0 || (job.rows[0] as any).user_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    await db.execute({
+      sql: 'DELETE FROM jobs WHERE id = ? AND user_id = ?',
+      args: [id, userId],
     });
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -22,16 +35,21 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getUserId();
     const { id } = await params;
     const body = await request.json();
     const { name, client_name, contract_price, job_date, hours_spent } = body;
 
-    // Get the old job_date to check if it changed
+    // Get the old job_date to check if it changed and verify ownership
     const oldJobResult = await db.execute({
-      sql: 'SELECT job_date FROM jobs WHERE id = ?',
+      sql: 'SELECT job_date, user_id FROM jobs WHERE id = ?',
       args: [id],
     });
-    const oldJob = oldJobResult.rows[0] as unknown as { job_date: string } | undefined;
+    const oldJob = oldJobResult.rows[0] as unknown as { job_date: string; user_id: string } | undefined;
+
+    if (!oldJob || oldJob.user_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
 
     await db.execute({
       sql: 'UPDATE jobs SET name = ?, client_name = ?, contract_price = ?, job_date = ?, hours_spent = ? WHERE id = ?',

@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserId } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const result = await db.execute('SELECT * FROM irs_rates ORDER BY year DESC');
+    const userId = await getUserId();
+    const result = await db.execute({
+      sql: 'SELECT * FROM irs_rates WHERE user_id = ? ORDER BY year DESC',
+      args: [userId]
+    });
     const rates = result.rows;
     return NextResponse.json(rates);
   } catch (error) {
@@ -13,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { year, rate } = body;
 
@@ -24,13 +30,13 @@ export async function POST(request: Request) {
     }
 
     await db.execute({
-      sql: 'INSERT OR REPLACE INTO irs_rates (year, rate) VALUES (?, ?)',
-      args: [year, rate]
+      sql: 'INSERT OR REPLACE INTO irs_rates (year, rate, user_id) VALUES (?, ?, ?)',
+      args: [year, rate, userId]
     });
 
     const result = await db.execute({
-      sql: 'SELECT * FROM irs_rates WHERE year = ?',
-      args: [year]
+      sql: 'SELECT * FROM irs_rates WHERE year = ? AND user_id = ?',
+      args: [year, userId]
     });
 
     const newRate = result.rows[0];

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserId } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month') || new Date().toISOString().slice(0, 7); // Format: YYYY-MM
 
@@ -13,8 +15,8 @@ export async function GET(request: Request) {
         COALESCE(SUM(hours_spent), 0) as total_billable_hours,
         COUNT(id) as job_count
       FROM jobs
-      WHERE strftime('%Y-%m', job_date) = ?`,
-      args: [month]
+      WHERE user_id = ? AND strftime('%Y-%m', job_date) = ?`,
+      args: [userId, month]
     });
 
     const jobStats = jobStatsResult.rows[0] as unknown as {
@@ -23,32 +25,35 @@ export async function GET(request: Request) {
       job_count: number;
     };
 
-    // Get monthly expenses (materials)
+    // Get monthly expenses (materials) - filter by user via job
     const materialsTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(cost + tax), 0) as total
-      FROM materials
-      WHERE strftime('%Y-%m', (SELECT job_date FROM jobs WHERE jobs.id = materials.job_id)) = ?`,
-      args: [month]
+      sql: `SELECT COALESCE(SUM(m.cost + m.tax), 0) as total
+      FROM materials m
+      INNER JOIN jobs j ON m.job_id = j.id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      args: [userId, month]
     });
 
     const materialsTotal = materialsTotalResult.rows[0] as unknown as { total: number };
 
-    // Get monthly expenses (labor)
+    // Get monthly expenses (labor) - filter by user via job
     const laborTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END), 0) as total
-      FROM labor
-      WHERE strftime('%Y-%m', (SELECT job_date FROM jobs WHERE jobs.id = labor.job_id)) = ?`,
-      args: [month]
+      sql: `SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) as total
+      FROM labor l
+      INNER JOIN jobs j ON l.job_id = j.id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      args: [userId, month]
     });
 
     const laborTotal = laborTotalResult.rows[0] as unknown as { total: number };
 
-    // Get monthly expenses (mileage)
+    // Get monthly expenses (mileage) - filter by user via job
     const mileageTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(miles * rate), 0) as total
-      FROM mileage
-      WHERE strftime('%Y-%m', (SELECT job_date FROM jobs WHERE jobs.id = mileage.job_id)) = ?`,
-      args: [month]
+      sql: `SELECT COALESCE(SUM(m.miles * m.rate), 0) as total
+      FROM mileage m
+      INNER JOIN jobs j ON m.job_id = j.id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      args: [userId, month]
     });
 
     const mileageTotal = mileageTotalResult.rows[0] as unknown as { total: number };
@@ -57,8 +62,8 @@ export async function GET(request: Request) {
     const overheadResultQuery = await db.execute({
       sql: `SELECT COALESCE(SUM(amount), 0) as total
       FROM overhead
-      WHERE strftime('%Y-%m', expense_date) = ?`,
-      args: [month]
+      WHERE user_id = ? AND strftime('%Y-%m', expense_date) = ?`,
+      args: [userId, month]
     });
 
     const overheadResult = overheadResultQuery.rows[0] as unknown as { total: number };

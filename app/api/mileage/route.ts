@@ -1,20 +1,33 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Mileage } from '@/lib/types';
+import { getUserId } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('job_id');
 
     let result;
     if (jobId) {
+      // Verify job ownership and get mileage
       result = await db.execute({
-        sql: 'SELECT * FROM mileage WHERE job_id = ? ORDER BY created_at DESC',
-        args: [jobId]
+        sql: `SELECT m.* FROM mileage m
+              INNER JOIN jobs j ON m.job_id = j.id
+              WHERE m.job_id = ? AND j.user_id = ?
+              ORDER BY m.created_at DESC`,
+        args: [jobId, userId]
       });
     } else {
-      result = await db.execute('SELECT * FROM mileage ORDER BY created_at DESC');
+      // Get all mileage for user's jobs
+      result = await db.execute({
+        sql: `SELECT m.* FROM mileage m
+              INNER JOIN jobs j ON m.job_id = j.id
+              WHERE j.user_id = ?
+              ORDER BY m.created_at DESC`,
+        args: [userId]
+      });
     }
 
     const mileage = result.rows as unknown as Mileage[];
@@ -27,6 +40,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { job_id, miles } = body;
 
@@ -37,30 +51,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the job's year to determine the IRS rate
+    // Get the job's year and verify ownership
     const jobResult = await db.execute({
-      sql: 'SELECT job_date FROM jobs WHERE id = ?',
+      sql: 'SELECT job_date, user_id FROM jobs WHERE id = ?',
       args: [job_id]
     });
 
-    const job = jobResult.rows[0] as unknown as { job_date: string } | undefined;
+    const job = jobResult.rows[0] as unknown as { job_date: string; user_id: string } | undefined;
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
+    if (job.user_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const jobYear = new Date(job.job_date).getFullYear();
 
-    // Get the IRS rate for that year
+    // Get the IRS rate for that year (only from user's rates)
     const irsRateResult = await db.execute({
-      sql: 'SELECT rate FROM irs_rates WHERE year = ?',
-      args: [jobYear]
+      sql: 'SELECT rate FROM irs_rates WHERE year = ? AND user_id = ?',
+      args: [jobYear, userId]
     });
 
     let irsRate = irsRateResult.rows[0] as unknown as { rate: number } | undefined;
 
-    // If no rate exists for that year, use the most recent available rate
+    // If no rate exists for that year, use the most recent available rate for this user
     if (!irsRate) {
-      const fallbackResult = await db.execute('SELECT rate FROM irs_rates ORDER BY year DESC LIMIT 1');
+      const fallbackResult = await db.execute({
+        sql: 'SELECT rate FROM irs_rates WHERE user_id = ? ORDER BY year DESC LIMIT 1',
+        args: [userId]
+      });
       irsRate = fallbackResult.rows[0] as unknown as { rate: number } | undefined;
     }
 

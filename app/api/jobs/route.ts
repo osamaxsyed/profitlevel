@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Job, JobWithCosts } from '@/lib/types';
+import { getUserId } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const userId = await getUserId();
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month'); // Format: YYYY-MM
 
@@ -38,17 +40,19 @@ export async function GET(request: Request) {
         FROM mileage
         GROUP BY job_id
       ) mil ON j.id = mil.job_id
+      WHERE j.user_id = ?
     `;
 
+    const args = [userId];
+
     if (month) {
-      query += ` WHERE strftime('%Y-%m', j.job_date) = ?`;
+      query += ` AND strftime('%Y-%m', j.job_date) = ?`;
+      args.push(month);
     }
 
     query += ` ORDER BY j.job_date DESC, j.created_at DESC`;
 
-    const result = month
-      ? await db.execute({ sql: query, args: [month] })
-      : await db.execute(query);
+    const result = await db.execute({ sql: query, args });
 
     return NextResponse.json(result.rows);
   } catch (error) {
@@ -59,6 +63,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
     const body = await request.json();
     const { name, client_name, contract_price, job_date, hours_spent } = body;
 
@@ -70,8 +75,8 @@ export async function POST(request: Request) {
     }
 
     const result = await db.execute({
-      sql: 'INSERT INTO jobs (name, client_name, contract_price, job_date, hours_spent) VALUES (?, ?, ?, ?, ?)',
-      args: [name, client_name || null, contract_price, job_date, hours_spent || null],
+      sql: 'INSERT INTO jobs (name, client_name, contract_price, job_date, hours_spent, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [name, client_name || null, contract_price, job_date, hours_spent || null, userId],
     });
 
     const newJobResult = await db.execute({

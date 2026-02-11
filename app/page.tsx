@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
 import type { JobWithCosts, Material, Labor, Mileage } from '@/lib/types';
 import MonthOverviewCard from './components/MonthOverview';
 import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
@@ -544,7 +545,7 @@ export default function Home() {
           <h1 className="text-xl sm:text-2xl font-bold text-white">
             Profit<span className="text-safety-orange">Level</span>
           </h1>
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-2 sm:gap-3 items-center">
             <button
               onClick={() => router.push('/overhead')}
               className="text-safety-orange font-semibold text-xs sm:text-sm"
@@ -563,6 +564,7 @@ export default function Home() {
             >
               <span className="hidden xs:inline">⚙️ </span>Settings
             </button>
+            <UserButton afterSignOutUrl="/sign-in" />
           </div>
         </div>
       </header>
