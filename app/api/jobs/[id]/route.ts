@@ -31,7 +31,7 @@ export async function PATCH(
       sql: 'SELECT job_date FROM jobs WHERE id = ?',
       args: [id],
     });
-    const oldJob = oldJobResult.rows[0] as { job_date: string } | undefined;
+    const oldJob = oldJobResult.rows[0] as unknown as { job_date: string } | undefined;
 
     await db.execute({
       sql: 'UPDATE jobs SET name = ?, client_name = ?, contract_price = ?, job_date = ?, hours_spent = ? WHERE id = ?',
@@ -53,7 +53,7 @@ export async function PATCH(
         irsRateResult = await db.execute('SELECT rate FROM irs_rates ORDER BY year DESC LIMIT 1');
       }
 
-      const rate = (irsRateResult.rows[0] as { rate: number })?.rate || 0.67;
+      const rate = (irsRateResult.rows[0] as unknown as { rate: number })?.rate || 0.67;
 
       // Update all mileage entries for this job with the new rate
       await db.execute({

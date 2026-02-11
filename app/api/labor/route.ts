@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       result = await db.execute('SELECT * FROM labor ORDER BY created_at DESC');
     }
 
-    const labor = result.rows as Labor[];
+    const labor = result.rows as unknown as Labor[];
 
     return NextResponse.json(labor);
   } catch (error) {
@@ -44,10 +44,10 @@ export async function POST(request: Request) {
 
     const laborResult = await db.execute({
       sql: 'SELECT * FROM labor WHERE id = ?',
-      args: [result.lastInsertRowid]
+      args: [Number(result.lastInsertRowid)]
     });
 
-    const newLabor = laborResult.rows[0] as Labor;
+    const newLabor = laborResult.rows[0] as unknown as Labor;
 
     return NextResponse.json(newLabor, { status: 201 });
   } catch (error) {

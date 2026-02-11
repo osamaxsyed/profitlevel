@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       sql: 'SELECT value FROM settings WHERE key = ?',
       args: ['yearly_goal_hours']
     });
-    const yearlyGoalHoursSetting = yearlyGoalHoursResult.rows[0] as { value: string } | undefined;
+    const yearlyGoalHoursSetting = yearlyGoalHoursResult.rows[0] as unknown as { value: string } | undefined;
     const yearlyGoalHours = yearlyGoalHoursSetting ? parseFloat(yearlyGoalHoursSetting.value) : 2000;
 
     let dateFilter = '';
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       args: params
     });
 
-    const jobStats = jobStatsResult.rows[0] as {
+    const jobStats = jobStatsResult.rows[0] as unknown as {
       total_revenue: number;
       total_billable_hours: number;
       job_count: number;
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       args: materialsParams
     });
 
-    const materialsTotal = materialsTotalResult.rows[0] as { total: number };
+    const materialsTotal = materialsTotalResult.rows[0] as unknown as { total: number };
 
     // Calculate labor total with proper filtering and flat rate handling
     let laborFilter = '';
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
       args: laborParams
     });
 
-    const laborTotal = laborTotalResult.rows[0] as { total: number };
+    const laborTotal = laborTotalResult.rows[0] as unknown as { total: number };
 
     // Calculate mileage total with proper filtering
     let mileageFilter = '';
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
       args: mileageParams
     });
 
-    const mileageTotal = mileageTotalResult.rows[0] as { total: number };
+    const mileageTotal = mileageTotalResult.rows[0] as unknown as { total: number };
 
     // Calculate overhead for the period
     let overheadFilter = '';
@@ -127,7 +127,7 @@ export async function GET(request: Request) {
       args: overheadParams
     });
 
-    const overheadStats = overheadStatsResult.rows[0] as { total_overhead: number };
+    const overheadStats = overheadStatsResult.rows[0] as unknown as { total_overhead: number };
 
     // Calculate YTD overhead for burden rate (or all time if no year specified)
     let ytdOverheadQuery = '';
@@ -146,7 +146,7 @@ export async function GET(request: Request) {
       args: ytdOverheadParams
     });
 
-    const ytdOverhead = ytdOverheadResult.rows[0] as { total: number };
+    const ytdOverhead = ytdOverheadResult.rows[0] as unknown as { total: number };
 
     const hourlyBurdenRate = yearlyGoalHours > 0 ? ytdOverhead.total / yearlyGoalHours : 0;
 

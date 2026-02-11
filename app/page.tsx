@@ -194,13 +194,12 @@ export default function Home() {
       contract_price: parseFloat(newJob.contract_price),
       job_date: newJob.job_date,
       hours_spent: newJob.hours_spent ? parseFloat(newJob.hours_spent) : null,
-      total_material_cost: 0,
-      total_labor_cost: 0,
-      total_mileage_cost: 0,
+      created_at: new Date().toISOString(),
+      materials_total: 0,
+      labor_total: 0,
+      mileage_total: 0,
       gross_profit: parseFloat(newJob.contract_price),
-      net_profit: parseFloat(newJob.contract_price),
-      gross_hourly: newJob.hours_spent ? parseFloat(newJob.contract_price) / parseFloat(newJob.hours_spent) : null,
-      net_hourly: newJob.hours_spent ? parseFloat(newJob.contract_price) / parseFloat(newJob.hours_spent) : null,
+      gross_hourly_rate: newJob.hours_spent ? parseFloat(newJob.contract_price) / parseFloat(newJob.hours_spent) : null,
     };
     setJobs([tempJob, ...jobs]);
     setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       result = await db.execute('SELECT * FROM materials ORDER BY created_at DESC');
     }
 
-    const materials = result.rows as Material[];
+    const materials = result.rows as unknown as Material[];
 
     return NextResponse.json(materials);
   } catch (error) {
@@ -44,10 +44,10 @@ export async function POST(request: Request) {
 
     const materialResult = await db.execute({
       sql: 'SELECT * FROM materials WHERE id = ?',
-      args: [result.lastInsertRowid]
+      args: [Number(result.lastInsertRowid)]
     });
 
-    const newMaterial = materialResult.rows[0] as Material;
+    const newMaterial = materialResult.rows[0] as unknown as Material;
 
     return NextResponse.json(newMaterial, { status: 201 });
   } catch (error) {

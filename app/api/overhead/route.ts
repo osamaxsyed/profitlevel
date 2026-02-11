@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       result = await db.execute('SELECT * FROM overhead ORDER BY expense_date DESC');
     }
 
-    const overhead = result.rows as Overhead[];
+    const overhead = result.rows as unknown as Overhead[];
 
     return NextResponse.json(overhead);
   } catch (error) {
@@ -48,10 +48,10 @@ export async function POST(request: Request) {
 
     const overheadResult = await db.execute({
       sql: 'SELECT * FROM overhead WHERE id = ?',
-      args: [result.lastInsertRowid]
+      args: [Number(result.lastInsertRowid)]
     });
 
-    const newOverhead = overheadResult.rows[0] as Overhead;
+    const newOverhead = overheadResult.rows[0] as unknown as Overhead;
 
     return NextResponse.json(newOverhead, { status: 201 });
   } catch (error) {

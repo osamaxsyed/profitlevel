@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
     const newJobResult = await db.execute({
       sql: 'SELECT * FROM jobs WHERE id = ?',
-      args: [result.lastInsertRowid],
+      args: [Number(result.lastInsertRowid)],
     });
 
     return NextResponse.json(newJobResult.rows[0], { status: 201 });

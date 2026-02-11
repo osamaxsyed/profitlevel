@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       result = await db.execute('SELECT * FROM mileage ORDER BY created_at DESC');
     }
 
-    const mileage = result.rows as Mileage[];
+    const mileage = result.rows as unknown as Mileage[];
 
     return NextResponse.json(mileage);
   } catch (error) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       args: [job_id]
     });
 
-    const job = jobResult.rows[0] as { job_date: string } | undefined;
+    const job = jobResult.rows[0] as unknown as { job_date: string } | undefined;
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
@@ -56,12 +56,12 @@ export async function POST(request: Request) {
       args: [jobYear]
     });
 
-    let irsRate = irsRateResult.rows[0] as { rate: number } | undefined;
+    let irsRate = irsRateResult.rows[0] as unknown as { rate: number } | undefined;
 
     // If no rate exists for that year, use the most recent available rate
     if (!irsRate) {
       const fallbackResult = await db.execute('SELECT rate FROM irs_rates ORDER BY year DESC LIMIT 1');
-      irsRate = fallbackResult.rows[0] as { rate: number } | undefined;
+      irsRate = fallbackResult.rows[0] as unknown as { rate: number } | undefined;
     }
 
     const rate = irsRate?.rate || 0.67; // Fallback to 0.67 if no rates exist
@@ -73,10 +73,10 @@ export async function POST(request: Request) {
 
     const mileageResult = await db.execute({
       sql: 'SELECT * FROM mileage WHERE id = ?',
-      args: [result.lastInsertRowid]
+      args: [Number(result.lastInsertRowid)]
     });
 
-    const newMileage = mileageResult.rows[0] as Mileage;
+    const newMileage = mileageResult.rows[0] as unknown as Mileage;
 
     return NextResponse.json(newMileage, { status: 201 });
   } catch (error) {

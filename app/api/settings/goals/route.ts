@@ -16,9 +16,9 @@ export async function GET() {
       args: ['yearly_goal_hours']
     });
 
-    const grossGoal = grossGoalResult.rows[0] as { value: string } | undefined;
-    const netGoal = netGoalResult.rows[0] as { value: string } | undefined;
-    const yearlyGoalHours = yearlyGoalHoursResult.rows[0] as { value: string } | undefined;
+    const grossGoal = grossGoalResult.rows[0] as unknown as { value: string } | undefined;
+    const netGoal = netGoalResult.rows[0] as unknown as { value: string } | undefined;
+    const yearlyGoalHours = yearlyGoalHoursResult.rows[0] as unknown as { value: string } | undefined;
 
     return NextResponse.json({
       gross_hourly_goal: grossGoal?.value || '195',
