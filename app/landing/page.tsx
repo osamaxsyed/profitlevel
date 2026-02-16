@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { SignInButton } from '@clerk/nextjs';
+import { sampleJobs, sampleMonthlyStats } from '@/lib/sampleData';
+import { formatCurrency, getProfitColor } from '@/lib/utils';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -20,7 +22,7 @@ export default function LandingPage() {
                 Sign In
               </button>
             </SignInButton>
-            <SignInButton mode="modal" forceRedirectUrl="/" signUpForceRedirectUrl="/">
+            <SignInButton mode="modal" forceRedirectUrl="/onboarding" signUpForceRedirectUrl="/onboarding">
               <button className="bg-safety-orange text-dark-gray px-6 py-2 rounded-lg font-bold hover:bg-opacity-90 transition-all">
                 Start Free
               </button>
@@ -44,7 +46,7 @@ export default function LandingPage() {
           </p>
 
           {/* Fitts's Law: large primary CTA */}
-          <SignInButton mode="modal" forceRedirectUrl="/" signUpForceRedirectUrl="/">
+          <SignInButton mode="modal" forceRedirectUrl="/onboarding" signUpForceRedirectUrl="/onboarding">
             <button className="bg-safety-orange text-dark-gray px-10 py-4 rounded-lg text-xl font-bold hover:scale-105 transition-transform shadow-xl">
               Start Tracking Free →
             </button>
@@ -161,6 +163,88 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Demo Preview Section */}
+      <section className="py-20 bg-dark-gray">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h3 className="text-4xl font-bold mb-4">
+              See It in Action
+            </h3>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Here's what your dashboard looks like with real jobs. This is sample data—yours will show your actual numbers.
+            </p>
+          </div>
+
+          {/* Sample Dashboard Preview */}
+          <div className="max-w-4xl mx-auto">
+            {/* Month Overview Card */}
+            <div className="bg-medium-gray rounded-lg p-6 border border-light-gray mb-6">
+              <h4 className="text-lg font-bold text-white mb-4">February 2026 Overview</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Revenue</div>
+                  <div className="text-xl font-bold text-white">{formatCurrency(sampleMonthlyStats.revenue)}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Net Profit</div>
+                  <div className="text-xl font-bold text-green-500">{formatCurrency(sampleMonthlyStats.net_profit)}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Net Hourly</div>
+                  <div className="text-xl font-bold text-safety-orange">${sampleMonthlyStats.net_hourly_rate.toFixed(2)}/hr</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Hours</div>
+                  <div className="text-xl font-bold text-white">{sampleMonthlyStats.billable_hours}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Jobs</div>
+                  <div className="text-xl font-bold text-white">{sampleMonthlyStats.job_count}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Overhead</div>
+                  <div className="text-xl font-bold text-red-400">{formatCurrency(sampleMonthlyStats.overhead)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sample Jobs List */}
+            <div className="bg-medium-gray rounded-lg p-6 border border-light-gray">
+              <h4 className="text-lg font-bold text-white mb-4">Recent Jobs</h4>
+              <div className="space-y-3">
+                {sampleJobs.slice(0, 3).map((job) => (
+                  <div key={job.id} className="bg-dark-gray p-4 rounded-lg border border-light-gray">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-bold text-white">{job.name}</div>
+                        <div className="text-sm text-gray-400">{job.client_name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-white">{formatCurrency(job.contract_price)}</div>
+                        <div className="text-xs text-gray-400">{job.hours_spent}hrs</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Gross Profit</span>
+                      <span className={`font-semibold ${getProfitColor(job.gross_hourly_rate, 195, 120)}`}>
+                        {formatCurrency(job.gross_profit)} (${job.gross_hourly_rate?.toFixed(2)}/hr)
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-center">
+                <SignInButton mode="modal" forceRedirectUrl="/onboarding" signUpForceRedirectUrl="/onboarding">
+                  <button className="text-safety-orange font-semibold hover:underline">
+                    See Your Own Numbers →
+                  </button>
+                </SignInButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works - Doherty Threshold: fast interactions */}
       <section className="bg-medium-gray border-y border-light-gray py-16">
         <div className="max-w-6xl mx-auto px-4">
@@ -234,7 +318,7 @@ export default function LandingPage() {
           <p className="text-xl text-dark-gray mb-8">
             Free to start. See your true hourly rate in minutes.
           </p>
-          <SignInButton mode="modal" forceRedirectUrl="/" signUpForceRedirectUrl="/">
+          <SignInButton mode="modal" forceRedirectUrl="/onboarding" signUpForceRedirectUrl="/onboarding">
             <button className="bg-dark-gray text-safety-orange px-10 py-4 rounded-lg text-xl font-bold hover:scale-105 transition-transform shadow-xl">
               Get Started Free →
             </button>
