@@ -15,13 +15,14 @@ export async function GET(request: Request) {
         COALESCE(mat.total, 0) as materials_total,
         COALESCE(lab.total, 0) as labor_total,
         COALESCE(mil.total, 0) as mileage_total,
+        COALESCE(hl.total_hours, 0) as hours_logged,
         j.contract_price -
           COALESCE(mat.total, 0) -
           COALESCE(lab.total, 0) -
           COALESCE(mil.total, 0) as gross_profit,
         CASE
-          WHEN j.hours_spent > 0 THEN
-            (j.contract_price - COALESCE(mat.total, 0) - COALESCE(lab.total, 0) - COALESCE(mil.total, 0)) / j.hours_spent
+          WHEN COALESCE(hl.total_hours, j.hours_spent, 0) > 0 THEN
+            (j.contract_price - COALESCE(mat.total, 0) - COALESCE(lab.total, 0) - COALESCE(mil.total, 0)) / COALESCE(hl.total_hours, j.hours_spent)
           ELSE NULL
         END as gross_hourly_rate
       FROM jobs j
@@ -40,6 +41,11 @@ export async function GET(request: Request) {
         FROM mileage
         GROUP BY job_id
       ) mil ON j.id = mil.job_id
+      LEFT JOIN (
+        SELECT job_id, SUM(hours) as total_hours
+        FROM hours_log
+        GROUP BY job_id
+      ) hl ON j.id = hl.job_id
       WHERE j.user_id = ?
     `;
 

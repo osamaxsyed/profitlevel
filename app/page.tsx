@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
-import type { JobWithCosts, Material, Labor, Mileage } from '@/lib/types';
+import type { JobWithCosts, Material, Labor, Mileage, HoursLog } from '@/lib/types';
 import MonthOverviewCard from './components/MonthOverview';
 import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
 import AddExpenseModal from './components/AddExpenseModal';
@@ -21,6 +21,7 @@ export default function Home() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [labor, setLabor] = useState<Labor[]>([]);
   const [mileage, setMileage] = useState<Mileage[]>([]);
+  const [hoursLog, setHoursLog] = useState<HoursLog[]>([]);
 
   const [grossGoal, setGrossGoal] = useState(195);
   const [netGoal, setNetGoal] = useState(120);
@@ -32,17 +33,20 @@ export default function Home() {
   const [newMaterial, setNewMaterial] = useState({ item_name: '', cost: '', tax: '' });
   const [newLabor, setNewLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
   const [newMileage, setNewMileage] = useState({ miles: '' });
+  const [newHoursLog, setNewHoursLog] = useState({ log_date: '', hours: '', note: '' });
 
   // Edit states
   const [editingJob, setEditingJob] = useState<number | null>(null);
   const [editingMaterial, setEditingMaterial] = useState<number | null>(null);
   const [editingLabor, setEditingLabor] = useState<number | null>(null);
   const [editingMileage, setEditingMileage] = useState<number | null>(null);
+  const [editingHoursLog, setEditingHoursLog] = useState<number | null>(null);
 
   const [editJob, setEditJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
   const [editMaterial, setEditMaterial] = useState({ item_name: '', cost: '', tax: '' });
   const [editLabor, setEditLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
   const [editMileage, setEditMileage] = useState({ miles: '' });
+  const [editHoursLog, setEditHoursLog] = useState({ log_date: '', hours: '', note: '' });
 
   // Client dropdown states
   const [showClientDropdown, setShowClientDropdown] = useState(false);
@@ -76,6 +80,14 @@ export default function Home() {
     }
     return false;
   });
+  const [showHoursLogList, setShowHoursLogList] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('showHoursLogList');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+  const [showAddHoursLog, setShowAddHoursLog] = useState(false);
 
   // Form validation errors
   const [jobErrors, setJobErrors] = useState({ name: '', contract_price: '', job_date: '' });
@@ -102,6 +114,10 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('showMileageList', JSON.stringify(showMileageList));
   }, [showMileageList]);
+
+  useEffect(() => {
+    localStorage.setItem('showHoursLogList', JSON.stringify(showHoursLogList));
+  }, [showHoursLogList]);
 
   useEffect(() => {
     if (selectedJob) {
@@ -146,14 +162,16 @@ export default function Home() {
   };
 
   const fetchJobDetails = async (jobId: number) => {
-    const [materialsRes, laborRes, mileageRes] = await Promise.all([
+    const [materialsRes, laborRes, mileageRes, hoursLogRes] = await Promise.all([
       fetch(`/api/materials?job_id=${jobId}`),
       fetch(`/api/labor?job_id=${jobId}`),
       fetch(`/api/mileage?job_id=${jobId}`),
+      fetch(`/api/hours-log?job_id=${jobId}`),
     ]);
     setMaterials(await materialsRes.json());
     setLabor(await laborRes.json());
     setMileage(await mileageRes.json());
+    setHoursLog(await hoursLogRes.json());
     fetchExistingHelpers();
   };
 
@@ -194,13 +212,14 @@ export default function Home() {
       client_name: newJob.client_name || null,
       contract_price: parseFloat(newJob.contract_price),
       job_date: newJob.job_date,
-      hours_spent: newJob.hours_spent ? parseFloat(newJob.hours_spent) : null,
+      hours_spent: null,
+      hours_logged: 0,
       created_at: new Date().toISOString(),
       materials_total: 0,
       labor_total: 0,
       mileage_total: 0,
       gross_profit: parseFloat(newJob.contract_price),
-      gross_hourly_rate: newJob.hours_spent ? parseFloat(newJob.contract_price) / parseFloat(newJob.hours_spent) : null,
+      gross_hourly_rate: null,
     };
     setJobs([tempJob, ...jobs]);
     setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
@@ -394,6 +413,50 @@ export default function Home() {
 
     // Actual API call
     await fetch(`/api/mileage/${id}`, { method: 'DELETE' });
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const addHoursLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('/api/hours-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: selectedJob,
+        log_date: newHoursLog.log_date,
+        hours: parseFloat(newHoursLog.hours),
+        note: newHoursLog.note || null,
+      }),
+    });
+    setNewHoursLog({ log_date: '', hours: '', note: '' });
+    setShowAddHoursLog(false);
+    setShowHoursLogList(true);
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const updateHoursLog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHoursLog) return;
+    await fetch(`/api/hours-log/${editingHoursLog}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        log_date: editHoursLog.log_date,
+        hours: parseFloat(editHoursLog.hours),
+        note: editHoursLog.note || null,
+      }),
+    });
+    setEditingHoursLog(null);
+    fetchJobs();
+    if (selectedJob) fetchJobDetails(selectedJob);
+  };
+
+  const deleteHoursLog = async (id: number) => {
+    if (!confirm('Delete this hours entry?')) return;
+    setHoursLog(hoursLog.filter(h => h.id !== id));
+    await fetch(`/api/hours-log/${id}`, { method: 'DELETE' });
     fetchJobs();
     if (selectedJob) fetchJobDetails(selectedJob);
   };
@@ -677,14 +740,6 @@ export default function Home() {
                     <p className="text-red-500 text-xs mt-1">{jobErrors.job_date}</p>
                   )}
                 </div>
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Hours Spent (optional)"
-                  value={newJob.hours_spent}
-                  onChange={(e) => setNewJob({ ...newJob, hours_spent: e.target.value })}
-                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
-                />
                 <div className="flex gap-2">
                   <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
                     Save
@@ -750,8 +805,8 @@ export default function Home() {
                     <div>Materials: {formatCurrency(job.materials_total)}</div>
                     <div>Labor: {formatCurrency(job.labor_total)}</div>
                     <div>Mileage: {formatCurrency(job.mileage_total)}</div>
-                    {job.hours_spent && (
-                      <div>Hours: {formatHours(job.hours_spent)}</div>
+                    {(job.hours_logged > 0 || job.hours_spent) && (
+                      <div>Hours: {formatHours(job.hours_logged || job.hours_spent || 0)}</div>
                     )}
                   </div>
                   <div className="mt-2 pt-2 border-t border-light-gray">
@@ -761,7 +816,7 @@ export default function Home() {
                         {formatCurrency(job.gross_profit)}
                       </span>
                     </div>
-                    {job.hours_spent && job.hours_spent > 0 && job.gross_hourly_rate && (
+                    {(job.hours_logged > 0 || (job.hours_spent && job.hours_spent > 0)) && job.gross_hourly_rate && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-gray-400">Hourly Rate:</span>
                         <span className="font-semibold text-white">
@@ -842,14 +897,6 @@ export default function Home() {
                       className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
                       required
                     />
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Hours Spent (optional)"
-                      value={editJob.hours_spent}
-                      onChange={(e) => setEditJob({ ...editJob, hours_spent: e.target.value })}
-                      className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
-                    />
                     <div className="flex gap-2">
                       <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
                         Save
@@ -903,10 +950,10 @@ export default function Home() {
                           {formatCurrency(currentJob.materials_total + currentJob.labor_total + currentJob.mileage_total)}
                         </span>
                       </div>
-                      {currentJob.hours_spent && (
+                      {(currentJob.hours_logged > 0 || currentJob.hours_spent) && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Hours Spent:</span>
-                          <span className="text-white">{formatHours(currentJob.hours_spent)}</span>
+                          <span className="text-gray-400">Hours Logged:</span>
+                          <span className="text-white">{formatHours(currentJob.hours_logged || currentJob.hours_spent || 0)}</span>
                         </div>
                       )}
                     </div>
@@ -917,7 +964,7 @@ export default function Home() {
                           {formatCurrency(currentJob.gross_profit)}
                         </span>
                       </div>
-                      {currentJob.hours_spent && currentJob.hours_spent > 0 && currentJob.gross_hourly_rate && (
+                      {(currentJob.hours_logged > 0 || (currentJob.hours_spent && currentJob.hours_spent > 0)) && currentJob.gross_hourly_rate && (
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400">Hourly Rate:</span>
                           <span className="text-xl font-bold text-white">
@@ -1345,6 +1392,159 @@ export default function Home() {
                     ))}
                   </div>
                   </>
+                  )}
+                  </div>
+                </div>
+
+                {/* Hours Log Section */}
+                <div className="mb-6">
+                  <div className="bg-medium-gray p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          onClick={() => setShowHoursLogList(!showHoursLogList)}
+                          className="text-white"
+                        >
+                          <svg
+                            className={`w-5 h-5 transition-transform ${showHoursLogList ? 'rotate-90' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                        <h3 className="text-lg font-bold text-white">Hours Log</h3>
+                        <span className="text-safety-orange font-semibold ml-2">
+                          {formatHours(hoursLog.reduce((sum, h) => sum + h.hours, 0))}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowAddHoursLog(true);
+                          setShowHoursLogList(true);
+                        }}
+                        className="bg-safety-orange text-white px-3 py-1 rounded text-sm font-semibold"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                  {showHoursLogList && (
+                    <>
+                      {showAddHoursLog && (
+                        <form onSubmit={addHoursLog} className="bg-light-gray p-4 rounded-lg mb-2 mt-2">
+                          <input
+                            type="date"
+                            value={newHoursLog.log_date}
+                            onChange={(e) => setNewHoursLog({ ...newHoursLog, log_date: e.target.value })}
+                            className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
+                            required
+                          />
+                          <input
+                            type="number"
+                            step="0.25"
+                            placeholder="Hours"
+                            value={newHoursLog.hours}
+                            onChange={(e) => setNewHoursLog({ ...newHoursLog, hours: e.target.value })}
+                            className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
+                            required
+                          />
+                          <input
+                            type="text"
+                            placeholder="Note (optional)"
+                            value={newHoursLog.note}
+                            onChange={(e) => setNewHoursLog({ ...newHoursLog, note: e.target.value })}
+                            className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
+                          />
+                          <div className="flex gap-2">
+                            <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddHoursLog(false)}
+                              className="flex-1 bg-light-gray text-white py-2 rounded"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      )}
+
+                      <div className="space-y-2 mt-2">
+                        {hoursLog.map((h) => (
+                          editingHoursLog === h.id ? (
+                            <form key={h.id} onSubmit={updateHoursLog} className="bg-medium-gray p-3 rounded">
+                              <input
+                                type="date"
+                                value={editHoursLog.log_date}
+                                onChange={(e) => setEditHoursLog({ ...editHoursLog, log_date: e.target.value })}
+                                className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
+                                required
+                              />
+                              <input
+                                type="number"
+                                step="0.25"
+                                placeholder="Hours"
+                                value={editHoursLog.hours}
+                                onChange={(e) => setEditHoursLog({ ...editHoursLog, hours: e.target.value })}
+                                className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
+                                required
+                              />
+                              <input
+                                type="text"
+                                placeholder="Note (optional)"
+                                value={editHoursLog.note}
+                                onChange={(e) => setEditHoursLog({ ...editHoursLog, note: e.target.value })}
+                                className="w-full bg-light-gray text-white px-2 py-1 rounded mb-2 text-sm"
+                              />
+                              <div className="flex gap-2">
+                                <button type="submit" className="flex-1 bg-safety-orange text-white py-1 rounded text-sm">
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingHoursLog(null)}
+                                  className="flex-1 bg-light-gray text-white py-1 rounded text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <div key={h.id} className="bg-medium-gray p-3 rounded">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex justify-between text-white">
+                                    <span>{new Date(h.log_date).toLocaleDateString()}</span>
+                                    <span>{formatHours(h.hours)}</span>
+                                  </div>
+                                  {h.note && <div className="text-xs text-gray-400">{h.note}</div>}
+                                </div>
+                                <div className="flex gap-1 ml-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditHoursLog({ log_date: h.log_date, hours: h.hours.toString(), note: h.note || '' });
+                                      setEditingHoursLog(h.id);
+                                    }}
+                                    className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => deleteHoursLog(h.id)}
+                                    className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                  >
+                                    Del
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </>
                   )}
                   </div>
                 </div>

@@ -35,12 +35,22 @@ export interface Mileage {
   created_at: string;
 }
 
+export interface HoursLog {
+  id: number;
+  job_id: number;
+  log_date: string;
+  hours: number;
+  note: string | null;
+  created_at: string;
+}
+
 export interface JobWithCosts extends Job {
   materials_total: number;
   labor_total: number;
   mileage_total: number;
   gross_profit: number;
   gross_hourly_rate: number | null;
+  hours_logged: number;
 }
 
 export interface IRSRate {

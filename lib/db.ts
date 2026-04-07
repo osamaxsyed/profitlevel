@@ -71,6 +71,18 @@ async function initializeDatabase() {
   `);
 
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS hours_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER NOT NULL,
+      log_date DATE NOT NULL,
+      hours REAL NOT NULL,
+      note TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (job_id) REFERENCES jobs (id) ON DELETE CASCADE
+    );
+  `);
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS overhead (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       description TEXT NOT NULL,
