@@ -875,9 +875,6 @@ export default function Home() {
                     <div>Materials: {formatCurrency(job.materials_total)}</div>
                     <div>Labor: {formatCurrency(job.labor_total)}</div>
                     <div>Mileage: {formatCurrency(job.mileage_total)}</div>
-                    {(job.hours_logged > 0 || job.hours_spent) && (
-                      <div>Hours: {formatHours(job.hours_logged || job.hours_spent || 0)}</div>
-                    )}
                   </div>
                   <div className="mt-2 pt-2 border-t border-light-gray">
                     <div className="flex justify-between items-center mb-1">
@@ -1029,12 +1026,6 @@ export default function Home() {
                           {formatCurrency(currentJob.materials_total + currentJob.labor_total + currentJob.mileage_total)}
                         </span>
                       </div>
-                      {(currentJob.hours_logged > 0 || currentJob.hours_spent) && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Hours Logged:</span>
-                          <span className="text-white">{formatHours(currentJob.hours_logged || currentJob.hours_spent || 0)}</span>
-                        </div>
-                      )}
                     </div>
                     <div className="mt-4 pt-4 border-t border-light-gray space-y-2">
                       <div className="flex justify-between items-center">
@@ -1043,14 +1034,6 @@ export default function Home() {
                           {formatCurrency(currentJob.gross_profit)}
                         </span>
                       </div>
-                      {(currentJob.hours_logged > 0 || (currentJob.hours_spent && currentJob.hours_spent > 0)) && currentJob.gross_hourly_rate && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Hourly Rate:</span>
-                          <span className="text-xl font-bold text-white">
-                            {formatCurrency(currentJob.gross_hourly_rate)}/hr
-                          </span>
-                        </div>
-                      )}
                       {currentJob.contract_price > 0 && (
                         <div className="text-xs text-gray-500 mt-2">
                           Profit Margin: {formatNumber((currentJob.gross_profit / currentJob.contract_price) * 100, 1)}%
@@ -1475,156 +1458,46 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Hours Log Section */}
+                {/* Day Type / day-rate verdict */}
                 <div className="mb-6">
                   <div className="bg-medium-gray p-4 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2 flex-1">
-                        <button
-                          onClick={() => setShowHoursLogList(!showHoursLogList)}
-                          className="text-white"
-                        >
-                          <svg
-                            className={`w-5 h-5 transition-transform ${showHoursLogList ? 'rotate-90' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                        <h3 className="text-lg font-bold text-white">Hours Log</h3>
-                        <span className="text-safety-orange font-semibold ml-2">
-                          {formatHours(hoursLog.reduce((sum, h) => sum + h.hours, 0))}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setShowAddHoursLog(true);
-                          setShowHoursLogList(true);
-                        }}
-                        className="bg-safety-orange text-white px-3 py-1 rounded text-sm font-semibold"
-                      >
-                        + Add
-                      </button>
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-bold text-white">Day Type</h3>
+                      {currentJob.day_units && Object.keys(currentJob.day_units).length > 0 ? (
+                        <div className="flex gap-2">
+                          {(['full', 'half', 'short', 'visit'] as const).map((t) => (
+                            (currentJob.day_units?.[t] || 0) > 0 && (
+                              <span key={t} className="text-sm bg-light-gray px-2 py-0.5 rounded text-gray-200 capitalize">
+                                {currentJob.day_units![t]} {t}
+                              </span>
+                            )
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">Not tagged — set in Edit</span>
+                      )}
                     </div>
 
-                  {showHoursLogList && (
-                    <>
-                      {showAddHoursLog && (
-                        <form onSubmit={addHoursLog} className="bg-light-gray p-4 rounded-lg mb-2 mt-2">
-                          <input
-                            type="date"
-                            value={newHoursLog.log_date}
-                            onChange={(e) => setNewHoursLog({ ...newHoursLog, log_date: e.target.value })}
-                            className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
-                            required
-                          />
-                          <input
-                            type="number"
-                            step="0.25"
-                            placeholder="Hours"
-                            value={newHoursLog.hours}
-                            onChange={(e) => setNewHoursLog({ ...newHoursLog, hours: e.target.value })}
-                            className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
-                            required
-                          />
-                          <input
-                            type="text"
-                            placeholder="Note (optional)"
-                            value={newHoursLog.note}
-                            onChange={(e) => setNewHoursLog({ ...newHoursLog, note: e.target.value })}
-                            className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
-                          />
-                          <div className="flex gap-2">
-                            <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowAddHoursLog(false)}
-                              className="flex-1 bg-light-gray text-white py-2 rounded"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </form>
-                      )}
-
-                      <div className="space-y-2 mt-2">
-                        {hoursLog.map((h) => (
-                          editingHoursLog === h.id ? (
-                            <form key={h.id} onSubmit={updateHoursLog} className="bg-medium-gray p-3 rounded">
-                              <input
-                                type="date"
-                                value={editHoursLog.log_date}
-                                onChange={(e) => setEditHoursLog({ ...editHoursLog, log_date: e.target.value })}
-                                className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
-                                required
-                              />
-                              <input
-                                type="number"
-                                step="0.25"
-                                placeholder="Hours"
-                                value={editHoursLog.hours}
-                                onChange={(e) => setEditHoursLog({ ...editHoursLog, hours: e.target.value })}
-                                className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
-                                required
-                              />
-                              <input
-                                type="text"
-                                placeholder="Note (optional)"
-                                value={editHoursLog.note}
-                                onChange={(e) => setEditHoursLog({ ...editHoursLog, note: e.target.value })}
-                                className="w-full bg-light-gray text-white px-2 py-1 rounded mb-2 text-sm"
-                              />
-                              <div className="flex gap-2">
-                                <button type="submit" className="flex-1 bg-safety-orange text-white py-1 rounded text-sm">
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingHoursLog(null)}
-                                  className="flex-1 bg-light-gray text-white py-1 rounded text-sm"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </form>
-                          ) : (
-                            <div key={h.id} className="bg-medium-gray p-3 rounded">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex justify-between text-white">
-                                    <span>{new Date(h.log_date).toLocaleDateString()}</span>
-                                    <span>{formatHours(h.hours)}</span>
-                                  </div>
-                                  {h.note && <div className="text-xs text-gray-400">{h.note}</div>}
-                                </div>
-                                <div className="flex gap-1 ml-2">
-                                  <button
-                                    onClick={() => {
-                                      setEditHoursLog({ log_date: h.log_date, hours: h.hours.toString(), note: h.note || '' });
-                                      setEditingHoursLog(h.id);
-                                    }}
-                                    className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => deleteHoursLog(h.id)}
-                                    className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                  >
-                                    Del
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        ))}
+                    {currentJob.day_rate && currentJob.day_rate.met !== null && (
+                      <div className="mt-3 pt-3 border-t border-light-gray space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Day-rate target ({currentJob.day_rate.day_count} day{currentJob.day_rate.day_count > 1 ? 's' : ''})</span>
+                          <span className="text-white">{formatCurrency(currentJob.day_rate.target)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Actual gross / day</span>
+                          <span className={`font-semibold ${currentJob.day_rate.met ? 'text-green-500' : 'text-red-500'}`}>
+                            {currentJob.day_rate.met ? '✓' : '✗'} {formatCurrency(currentJob.day_rate.per_day || 0)}/day
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">vs target</span>
+                          <span className={currentJob.day_rate.delta >= 0 ? 'text-green-500' : 'text-red-500'}>
+                            {currentJob.day_rate.delta >= 0 ? '+' : ''}{formatCurrency(currentJob.day_rate.delta)}
+                          </span>
+                        </div>
                       </div>
-                    </>
-                  )}
+                    )}
                   </div>
                 </div>
 
