@@ -8,14 +8,21 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month') || new Date().toISOString().slice(0, 7); // Format: YYYY-MM
 
-    // Get monthly revenue, job count, and billable hours
+    // Get monthly revenue, job count, and billable hours.
+    // Billable hours prefer the hours_log sum per job (the source of truth);
+    // fall back to jobs.hours_spent for legacy jobs with no log rows.
     const jobStatsResult = await db.execute({
       sql: `SELECT
-        COALESCE(SUM(contract_price), 0) as total_revenue,
-        COALESCE(SUM(hours_spent), 0) as total_billable_hours,
-        COUNT(id) as job_count
-      FROM jobs
-      WHERE user_id = ? AND strftime('%Y-%m', job_date) = ?`,
+        COALESCE(SUM(j.contract_price), 0) as total_revenue,
+        COALESCE(SUM(COALESCE(hl.total_hours, j.hours_spent, 0)), 0) as total_billable_hours,
+        COUNT(j.id) as job_count
+      FROM jobs j
+      LEFT JOIN (
+        SELECT job_id, SUM(hours) as total_hours
+        FROM hours_log
+        GROUP BY job_id
+      ) hl ON j.id = hl.job_id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
       args: [userId, month]
     });
 

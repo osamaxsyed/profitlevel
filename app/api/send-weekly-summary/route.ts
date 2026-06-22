@@ -41,14 +41,20 @@ export async function GET() {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const dateStr = sevenDaysAgo.toISOString().split('T')[0];
 
-    // Get weekly stats
+    // Get weekly stats. Billable hours prefer the hours_log sum per job (the
+    // source of truth); fall back to jobs.hours_spent for jobs with no log rows.
     const jobStatsResult = await db.execute({
       sql: `SELECT
-        COALESCE(SUM(contract_price), 0) as total_revenue,
-        COALESCE(SUM(hours_spent), 0) as total_hours,
-        COUNT(id) as job_count
-      FROM jobs
-      WHERE user_id = ? AND job_date >= ?`,
+        COALESCE(SUM(j.contract_price), 0) as total_revenue,
+        COALESCE(SUM(COALESCE(hl.total_hours, j.hours_spent, 0)), 0) as total_hours,
+        COUNT(j.id) as job_count
+      FROM jobs j
+      LEFT JOIN (
+        SELECT job_id, SUM(hours) as total_hours
+        FROM hours_log
+        GROUP BY job_id
+      ) hl ON j.id = hl.job_id
+      WHERE j.user_id = ? AND j.job_date >= ?`,
       args: [userId, dateStr]
     });
 
