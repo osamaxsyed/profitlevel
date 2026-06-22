@@ -151,14 +151,14 @@ export default function MonthOverviewCard() {
               {/* Annual pace */}
               <div className="mt-2 pt-2 border-t border-light-gray text-xs">
                 <div className="flex justify-between text-gray-400">
-                  <span>On pace for the year</span>
+                  <span>Earned vs goal (YTD through this month)</span>
                   <span className={paceOn ? 'text-green-500' : 'text-red-500'}>
                     ${goals.pace_actual.toFixed(0)} / ${goals.pace_target.toFixed(0)}
                     {' '}({paceOn ? '+' : ''}${goals.pace_delta.toFixed(0)})
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-500">
-                  <span>Full-year target</span>
+                  <span>Full-year target (all 12 months)</span>
                   <span>${goals.annual_target.toFixed(0)}</span>
                 </div>
               </div>

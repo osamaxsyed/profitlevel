@@ -82,21 +82,21 @@ export default function Goals() {
 
       {/* On-pace-for-the-year summary */}
       <div className="bg-medium-gray p-4 rounded-lg mb-4">
-        <div className="text-xs text-gray-400">On pace for {year}</div>
+        <div className="text-xs text-gray-400">Earned vs goal, through {MONTH_NAMES[data.current_month - 1]}</div>
         <div className={`text-3xl font-bold ${annualOnPace ? 'text-green-500' : 'text-red-500'}`}>
           {formatCurrency(data.pace_actual)}
           <span className="text-gray-500 text-lg"> / {formatCurrency(data.pace_target)}</span>
         </div>
         <div className="text-xs text-gray-500 mt-1">
-          Through {MONTH_NAMES[data.current_month - 1]} • {annualOnPace ? '+' : ''}{formatCurrency(data.pace_delta)}{' '}
-          {annualOnPace ? 'ahead of pace' : 'behind pace'}
+          {annualOnPace ? '+' : ''}{formatCurrency(data.pace_delta)}{' '}
+          {annualOnPace ? 'ahead of pace' : 'behind pace'} (goals set Jan–{MONTH_NAMES[data.current_month - 1]})
         </div>
         <div className="mt-2 pt-2 border-t border-light-gray flex justify-between text-sm">
-          <span className="text-gray-400">Full-year target</span>
+          <span className="text-gray-400">Full-year target (all 12 months)</span>
           <span className="text-white">{formatCurrency(data.annual_target)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Actual so far (YTD)</span>
+          <span className="text-gray-400">Total earned this year</span>
           <span className="text-white">{formatCurrency(data.annual_actual)}</span>
         </div>
       </div>
