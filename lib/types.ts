@@ -51,6 +51,8 @@ export interface JobWithCosts extends Job {
   gross_profit: number;
   gross_hourly_rate: number | null;
   hours_logged: number;
+  day_units?: import('./dayRate').DayUnits | null;
+  day_rate?: import('./dayRate').DayRateResult;
 }
 
 export interface IRSRate {

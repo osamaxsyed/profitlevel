@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getUserId } from '@/lib/auth';
+import { parseTargets, parseDayUnits, evaluateJob, dayCount, TIER_ORDER, type DayTier } from '@/lib/dayRate';
 
 export async function GET(request: Request) {
   try {
@@ -80,6 +81,55 @@ export async function GET(request: Request) {
     const netProfit = jobStats.total_revenue - totalExpenses;
     const netHourlyRate = jobStats.total_billable_hours > 0 ? netProfit / jobStats.total_billable_hours : 0;
 
+    // Day-rate breakdown: per-job gross profit + day_units for the month.
+    const targetsRow = await db.execute({
+      sql: 'SELECT value FROM settings WHERE key = ? AND user_id = ?',
+      args: ['day_rate_targets', userId],
+    });
+    const targets = parseTargets((targetsRow.rows[0] as { value?: string } | undefined)?.value);
+
+    const monthJobsResult = await db.execute({
+      sql: `SELECT
+          j.id, j.name, j.contract_price, j.day_units,
+          j.contract_price
+            - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END) FROM labor WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
+          AS gross_profit
+        FROM jobs j
+        WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?
+        ORDER BY j.job_date`,
+      args: [userId, month],
+    });
+
+    const tierCounts: Record<DayTier, number> = { full: 0, half: 0, short: 0, visit: 0 };
+    let dayRateTargetTotal = 0;
+    let dayRateActualTotal = 0;
+    let totalDayUnits = 0;
+    let jobsMet = 0;
+    let taggedJobs = 0;
+
+    const jobBreakdown = monthJobsResult.rows.map((row) => {
+      const r = row as Record<string, unknown>;
+      const units = parseDayUnits(r.day_units as string | null);
+      const gross = Number(r.gross_profit ?? 0);
+      const evalResult = evaluateJob(units, gross, targets);
+      if (units) {
+        for (const t of TIER_ORDER) tierCounts[t] += units[t] || 0;
+        totalDayUnits += dayCount(units);
+        dayRateTargetTotal += evalResult.target;
+        dayRateActualTotal += gross; // only count gross of tagged jobs toward the target comparison
+        taggedJobs += 1;
+        if (evalResult.met) jobsMet += 1;
+      }
+      return {
+        id: r.id,
+        name: r.name,
+        gross_profit: gross,
+        ...evalResult,
+      };
+    });
+
     return NextResponse.json({
       revenue: jobStats.total_revenue,
       net_profit: netProfit,
@@ -87,6 +137,17 @@ export async function GET(request: Request) {
       billable_hours: jobStats.total_billable_hours,
       job_count: jobStats.job_count,
       overhead: overheadResult.total,
+      day_rate: {
+        targets,
+        tier_counts: tierCounts,
+        total_day_units: totalDayUnits,
+        target_total: dayRateTargetTotal,
+        actual_total: dayRateActualTotal,
+        avg_per_day: totalDayUnits > 0 ? dayRateActualTotal / totalDayUnits : null,
+        jobs_tagged: taggedJobs,
+        jobs_met: jobsMet,
+        jobs: jobBreakdown,
+      },
     });
   } catch (error) {
     console.error('Error fetching business health:', error);

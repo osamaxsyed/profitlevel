@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getUserId } from '@/lib/auth';
+import { parseTargets, parseDayUnits, evaluateJob, dayCount, TIER_ORDER, type DayTier } from '@/lib/dayRate';
 
 export async function GET(request: Request) {
   try {
@@ -169,7 +170,62 @@ export async function GET(request: Request) {
     const netProfit = jobStats.total_revenue - totalExpenses;
     const taxableIncome = netProfit; // Simplified - in reality might have more deductions
 
+    // Day-rate breakdown for the period.
+    const dayTargetsRow = await db.execute({
+      sql: 'SELECT value FROM settings WHERE key = ? AND user_id = ?',
+      args: ['day_rate_targets', userId],
+    });
+    const dayTargets = parseTargets((dayTargetsRow.rows[0] as { value?: string } | undefined)?.value);
+
+    const periodJobsResult = await db.execute({
+      sql: `SELECT
+          j.id, j.name, j.day_units,
+          j.contract_price
+            - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END) FROM labor WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
+          AS gross_profit
+        FROM jobs j
+        WHERE j.user_id = ? ${dateFilter}
+        ORDER BY j.job_date`,
+      args: params,
+    });
+
+    const periodTierCounts: Record<DayTier, number> = { full: 0, half: 0, short: 0, visit: 0 };
+    let periodTargetTotal = 0;
+    let periodActualTotal = 0;
+    let periodDayUnits = 0;
+    let periodJobsMet = 0;
+    let periodJobsTagged = 0;
+
+    const periodJobBreakdown = periodJobsResult.rows.map((row) => {
+      const r = row as Record<string, unknown>;
+      const units = parseDayUnits(r.day_units as string | null);
+      const gross = Number(r.gross_profit ?? 0);
+      const evalResult = evaluateJob(units, gross, dayTargets);
+      if (units) {
+        for (const t of TIER_ORDER) periodTierCounts[t] += units[t] || 0;
+        periodDayUnits += dayCount(units);
+        periodTargetTotal += evalResult.target;
+        periodActualTotal += gross;
+        periodJobsTagged += 1;
+        if (evalResult.met) periodJobsMet += 1;
+      }
+      return { id: r.id, name: r.name, gross_profit: gross, ...evalResult };
+    });
+
     return NextResponse.json({
+      day_rate: {
+        targets: dayTargets,
+        tier_counts: periodTierCounts,
+        total_day_units: periodDayUnits,
+        target_total: periodTargetTotal,
+        actual_total: periodActualTotal,
+        avg_per_day: periodDayUnits > 0 ? periodActualTotal / periodDayUnits : null,
+        jobs_tagged: periodJobsTagged,
+        jobs_met: periodJobsMet,
+        jobs: periodJobBreakdown,
+      },
       period: periodLabel,
       revenue: jobStats.total_revenue,
       expenses: {

@@ -38,7 +38,11 @@ export async function PATCH(
     const userId = await getUserId();
     const { id } = await params;
     const body = await request.json();
-    const { name, client_name, contract_price, job_date, hours_spent } = body;
+    const { name, client_name, contract_price, job_date, day_units } = body;
+
+    // day_units may arrive as an object or JSON string; normalize to a string.
+    const dayUnitsValue =
+      day_units == null ? null : typeof day_units === 'string' ? day_units : JSON.stringify(day_units);
 
     // Get the old job_date to check if it changed and verify ownership
     const oldJobResult = await db.execute({
@@ -52,8 +56,8 @@ export async function PATCH(
     }
 
     await db.execute({
-      sql: 'UPDATE jobs SET name = ?, client_name = ?, contract_price = ?, job_date = ?, hours_spent = ? WHERE id = ?',
-      args: [name, client_name || null, contract_price, job_date, hours_spent || null, id],
+      sql: 'UPDATE jobs SET name = ?, client_name = ?, contract_price = ?, job_date = ?, day_units = ? WHERE id = ?',
+      args: [name, client_name || null, contract_price, job_date, dayUnitsValue, id],
     });
 
     // If job_date changed, update mileage rates for this job

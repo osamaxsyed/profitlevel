@@ -8,6 +8,50 @@ import MonthOverviewCard from './components/MonthOverview';
 import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
 import AddExpenseModal from './components/AddExpenseModal';
 
+const DAY_TIER_OPTIONS = [
+  { value: 'full', label: 'Full day' },
+  { value: 'half', label: 'Half day' },
+  { value: 'short', label: 'Short job' },
+  { value: 'visit', label: 'Site visit' },
+];
+
+// Tier + count selector for a job's day-units. count > 1 = a multi-day project.
+function TierSelector({
+  tier,
+  count,
+  onChange,
+}: {
+  tier: string;
+  count: string;
+  onChange: (tier: string, count: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-xs text-gray-400 mb-1 block">Day type</label>
+      <div className="flex gap-2">
+        <select
+          value={tier}
+          onChange={(e) => onChange(e.target.value, count)}
+          className="flex-1 bg-light-gray text-white px-3 py-2 rounded"
+        >
+          {DAY_TIER_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="1"
+          value={count}
+          onChange={(e) => onChange(tier, e.target.value)}
+          className="w-20 bg-light-gray text-white px-3 py-2 rounded"
+          title="Number of days at this tier (for multi-day projects)"
+        />
+      </div>
+      <p className="text-xs text-gray-500 mt-1">×{count || 1} day{(parseInt(count, 10) || 1) > 1 ? 's' : ''} — for big jobs, set the count of days.</p>
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const [jobs, setJobs] = useState<JobWithCosts[]>([]);
@@ -29,7 +73,7 @@ export default function Home() {
   const [existingHelpers, setExistingHelpers] = useState<string[]>([]);
 
   // Form states
-  const [newJob, setNewJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+  const [newJob, setNewJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', day_tier: 'full', day_count: '1' });
   const [newMaterial, setNewMaterial] = useState({ item_name: '', cost: '', tax: '' });
   const [newLabor, setNewLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
   const [newMileage, setNewMileage] = useState({ miles: '' });
@@ -42,7 +86,7 @@ export default function Home() {
   const [editingMileage, setEditingMileage] = useState<number | null>(null);
   const [editingHoursLog, setEditingHoursLog] = useState<number | null>(null);
 
-  const [editJob, setEditJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+  const [editJob, setEditJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', day_tier: 'full', day_count: '1' });
   const [editMaterial, setEditMaterial] = useState({ item_name: '', cost: '', tax: '' });
   const [editLabor, setEditLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
   const [editMileage, setEditMileage] = useState({ miles: '' });
@@ -198,6 +242,13 @@ export default function Home() {
     return isValid;
   };
 
+  // Serialize a tier + count selection into the day_units JSON the API stores.
+  const buildDayUnits = (tier: string, count: string): string | null => {
+    const n = parseInt(count, 10);
+    if (!tier || !n || n < 1) return null;
+    return JSON.stringify({ [tier]: n });
+  };
+
   const addJob = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -222,7 +273,8 @@ export default function Home() {
       gross_hourly_rate: null,
     };
     setJobs([tempJob, ...jobs]);
-    setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', hours_spent: '' });
+    const dayUnits = buildDayUnits(newJob.day_tier, newJob.day_count);
+    setNewJob({ name: '', client_name: '', contract_price: '', job_date: '', day_tier: 'full', day_count: '1' });
     setJobErrors({ name: '', contract_price: '', job_date: '' });
     setShowAddJob(false);
 
@@ -235,7 +287,7 @@ export default function Home() {
         client_name: newJob.client_name || null,
         contract_price: parseFloat(newJob.contract_price),
         job_date: newJob.job_date,
-        hours_spent: newJob.hours_spent ? parseFloat(newJob.hours_spent) : null,
+        day_units: dayUnits,
       }),
     });
     fetchJobs();
@@ -253,7 +305,7 @@ export default function Home() {
         client_name: editJob.client_name || null,
         contract_price: parseFloat(editJob.contract_price),
         job_date: editJob.job_date,
-        hours_spent: editJob.hours_spent ? parseFloat(editJob.hours_spent) : null,
+        day_units: buildDayUnits(editJob.day_tier, editJob.day_count),
       }),
     });
     setEditingJob(null);
@@ -462,12 +514,23 @@ export default function Home() {
   };
 
   const startEditJob = (job: JobWithCosts) => {
+    // Derive the tier selector from day_units. For multi-tier (project) jobs,
+    // default to the tier with the highest count so the single-tier form has a sensible value.
+    let day_tier = 'full';
+    let day_count = '1';
+    const units = job.day_units;
+    if (units && Object.keys(units).length) {
+      const [topTier, topCount] = Object.entries(units).sort((a, b) => (b[1] || 0) - (a[1] || 0))[0];
+      day_tier = topTier;
+      day_count = String(topCount);
+    }
     setEditJob({
       name: job.name,
       client_name: job.client_name || '',
       contract_price: job.contract_price.toString(),
       job_date: job.job_date,
-      hours_spent: job.hours_spent ? job.hours_spent.toString() : '',
+      day_tier,
+      day_count,
     });
     setEditingJob(job.id);
   };
@@ -740,6 +803,13 @@ export default function Home() {
                     <p className="text-red-500 text-xs mt-1">{jobErrors.job_date}</p>
                   )}
                 </div>
+                <div className="mb-2">
+                  <TierSelector
+                    tier={newJob.day_tier}
+                    count={newJob.day_count}
+                    onChange={(day_tier, day_count) => setNewJob({ ...newJob, day_tier, day_count })}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
                     Save
@@ -816,11 +886,13 @@ export default function Home() {
                         {formatCurrency(job.gross_profit)}
                       </span>
                     </div>
-                    {(job.hours_logged > 0 || (job.hours_spent && job.hours_spent > 0)) && job.gross_hourly_rate && (
+                    {job.day_rate && job.day_rate.met !== null && (
                       <div className="flex justify-between items-center text-sm mt-1">
-                        <span className="text-gray-400">Hourly Rate:</span>
-                        <span className="font-semibold text-white">
-                          {formatCurrency(job.gross_hourly_rate)}/hr
+                        <span className="text-gray-400">
+                          Day rate ({job.day_rate.day_count}d, goal {formatCurrency(job.day_rate.target)}):
+                        </span>
+                        <span className={`font-semibold ${job.day_rate.met ? 'text-green-500' : 'text-red-500'}`}>
+                          {job.day_rate.met ? '✓' : '✗'} {formatCurrency(job.day_rate.per_day || 0)}/day
                         </span>
                       </div>
                     )}
@@ -897,6 +969,13 @@ export default function Home() {
                       className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
                       required
                     />
+                    <div className="mb-2">
+                      <TierSelector
+                        tier={editJob.day_tier}
+                        count={editJob.day_count}
+                        onChange={(day_tier, day_count) => setEditJob({ ...editJob, day_tier, day_count })}
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
                         Save

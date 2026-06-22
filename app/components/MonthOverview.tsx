@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface DayRateSummary {
+  targets: Record<string, number>;
+  tier_counts: { full: number; half: number; short: number; visit: number };
+  total_day_units: number;
+  target_total: number;
+  actual_total: number;
+  avg_per_day: number | null;
+  jobs_tagged: number;
+  jobs_met: number;
+}
+
 interface MonthOverview {
   revenue: number;
   net_profit: number;
@@ -10,7 +21,15 @@ interface MonthOverview {
   billable_hours: number;
   job_count: number;
   overhead: number;
+  day_rate?: DayRateSummary;
 }
+
+const TIER_META: { key: 'full' | 'half' | 'short' | 'visit'; label: string }[] = [
+  { key: 'full', label: 'Full' },
+  { key: 'half', label: 'Half' },
+  { key: 'short', label: 'Short' },
+  { key: 'visit', label: 'Visit' },
+];
 
 export default function MonthOverviewCard() {
   const router = useRouter();
@@ -77,15 +96,56 @@ export default function MonthOverviewCard() {
           )}
         </div>
 
-        {/* Net Hourly Rate */}
+        {/* Day-Rate Performance */}
+        {overview.day_rate && overview.day_rate.jobs_tagged > 0 && (() => {
+          const dr = overview.day_rate;
+          const onTarget = dr.actual_total >= dr.target_total;
+          const dayColor = onTarget ? 'text-green-500' :
+                           dr.actual_total >= dr.target_total * 0.8 ? 'text-yellow-500' : 'text-red-500';
+          const avgGoal = dr.total_day_units > 0 ? dr.target_total / dr.total_day_units : 0;
+          return (
+            <div className="pt-2 border-t border-light-gray">
+              <div className="text-xs text-gray-400">Avg per Day</div>
+              <div className={`text-2xl font-bold ${dayColor}`}>
+                {dr.avg_per_day != null ? `$${dr.avg_per_day.toFixed(0)}` : '—'}/day
+              </div>
+              <div className="text-xs text-gray-500">
+                Goal: ${avgGoal.toFixed(0)}/day • {dr.jobs_met}/{dr.jobs_tagged} jobs hit target
+              </div>
+              {/* Target vs actual */}
+              <div className="mt-2 text-xs">
+                <div className="flex justify-between text-gray-400">
+                  <span>Day-rate target ({dr.total_day_units} days)</span>
+                  <span className="text-white">${dr.target_total.toFixed(0)}</span>
+                </div>
+                <div className="flex justify-between text-gray-400">
+                  <span>Actual gross</span>
+                  <span className={onTarget ? 'text-green-500' : 'text-red-500'}>
+                    ${dr.actual_total.toFixed(0)} ({dr.actual_total - dr.target_total >= 0 ? '+' : ''}
+                    ${(dr.actual_total - dr.target_total).toFixed(0)})
+                  </span>
+                </div>
+              </div>
+              {/* Tier counts */}
+              <div className="mt-2 flex gap-2">
+                {TIER_META.map(({ key, label }) => (
+                  dr.tier_counts[key] > 0 && (
+                    <span key={key} className="text-xs bg-light-gray px-2 py-0.5 rounded text-gray-300">
+                      {dr.tier_counts[key]} {label}
+                    </span>
+                  )
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Net Hourly Rate (secondary, legacy) */}
         {overview.billable_hours > 0 && (
           <div className="pt-2 border-t border-light-gray">
-            <div className="text-xs text-gray-400">Net Hourly Rate</div>
-            <div className={`text-2xl font-bold ${hourlyRateColor}`}>
-              ${overview.net_hourly_rate.toFixed(2)}/hr
-            </div>
             <div className="text-xs text-gray-500">
-              Goal: ${netGoal}/hr
+              Net hourly: <span className={hourlyRateColor}>${overview.net_hourly_rate.toFixed(2)}/hr</span>
+              {' '}· {overview.billable_hours.toFixed(1)}h logged
             </div>
           </div>
         )}

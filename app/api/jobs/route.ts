@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Job, JobWithCosts } from '@/lib/types';
 import { getUserId } from '@/lib/auth';
+import { parseTargets, parseDayUnits, evaluateJob } from '@/lib/dayRate';
 
 export async function GET(request: Request) {
   try {
@@ -60,7 +61,22 @@ export async function GET(request: Request) {
 
     const result = await db.execute({ sql: query, args });
 
-    return NextResponse.json(result.rows);
+    // Day-rate evaluation: target = sum of day_units' tier rates, judged vs gross_profit.
+    const targetsRow = await db.execute({
+      sql: 'SELECT value FROM settings WHERE key = ? AND user_id = ?',
+      args: ['day_rate_targets', userId],
+    });
+    const targets = parseTargets((targetsRow.rows[0] as { value?: string } | undefined)?.value);
+
+    const enriched = result.rows.map((row) => {
+      const r = row as Record<string, unknown>;
+      const units = parseDayUnits(r.day_units as string | null);
+      const gross = Number(r.gross_profit ?? 0);
+      const dayRate = evaluateJob(units, gross, targets);
+      return { ...r, day_units: units, day_rate: dayRate };
+    });
+
+    return NextResponse.json(enriched);
   } catch (error) {
     console.error('Error fetching jobs:', error);
     return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 });
@@ -71,7 +87,7 @@ export async function POST(request: Request) {
   try {
     const userId = await getUserId();
     const body = await request.json();
-    const { name, client_name, contract_price, job_date, hours_spent } = body;
+    const { name, client_name, contract_price, job_date, day_units } = body;
 
     if (!name || contract_price === undefined || !job_date) {
       return NextResponse.json(
@@ -80,9 +96,13 @@ export async function POST(request: Request) {
       );
     }
 
+    // day_units may arrive as an object ({"full":1}) or a JSON string; normalize to a string.
+    const dayUnitsValue =
+      day_units == null ? null : typeof day_units === 'string' ? day_units : JSON.stringify(day_units);
+
     const result = await db.execute({
-      sql: 'INSERT INTO jobs (name, client_name, contract_price, job_date, hours_spent, user_id) VALUES (?, ?, ?, ?, ?, ?)',
-      args: [name, client_name || null, contract_price, job_date, hours_spent || null, userId],
+      sql: 'INSERT INTO jobs (name, client_name, contract_price, job_date, day_units, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [name, client_name || null, contract_price, job_date, dayUnitsValue, userId],
     });
 
     const newJobResult = await db.execute({
