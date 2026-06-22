@@ -3,6 +3,8 @@ import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'sonner';
 import { ClerkProvider } from '@clerk/nextjs';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -34,6 +36,8 @@ export default function RootLayout({
         >
           {children}
           <Toaster position="top-center" richColors />
+          <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
