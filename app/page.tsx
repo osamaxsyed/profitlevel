@@ -8,6 +8,7 @@ import MonthOverviewCard from './components/MonthOverview';
 import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
 import AddExpenseModal from './components/AddExpenseModal';
 import JobStampCard from './components/pl/JobStampCard';
+import BottomNav from './components/pl/BottomNav';
 import { tierSummary, resultTokens, TIER_LABELS, TIER_ORDER, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
 
 const DAY_TIER_OPTIONS = [
@@ -56,6 +57,14 @@ function TierSelector({
 
 export default function Home() {
   const router = useRouter();
+  const [tab, setTab] = useState<'level' | 'jobs'>('level');
+
+  // Honor ?tab=jobs deep-link (e.g. from the bottom nav on another route).
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'jobs') {
+      setTab('jobs');
+    }
+  }, []);
   const [jobs, setJobs] = useState<JobWithCosts[]>([]);
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
   const [showAddJob, setShowAddJob] = useState(false);
@@ -665,57 +674,78 @@ export default function Home() {
     );
   });
 
-  return (
-    <div className="min-h-screen bg-dark-gray">
-      {/* Header */}
-      <header className="bg-medium-gray border-b border-light-gray px-4 py-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
-            Profit<span className="text-safety-orange">Level</span>
-          </h1>
-          <div className="flex gap-2 sm:gap-3 items-center">
-            <button
-              onClick={() => router.push('/overhead')}
-              className="text-safety-orange font-semibold text-xs sm:text-sm"
-            >
-              <span className="hidden xs:inline">🏢 </span>Overhead
-            </button>
-            <button
-              onClick={() => router.push('/financials')}
-              className="text-safety-orange font-semibold text-xs sm:text-sm"
-            >
-              <span className="hidden xs:inline">📊 </span>Financials
-            </button>
-            <button
-              onClick={() => router.push('/goals')}
-              className="text-safety-orange font-semibold text-xs sm:text-sm"
-            >
-              <span className="hidden xs:inline">🎯 </span>Goals
-            </button>
-            <button
-              onClick={() => router.push('/settings')}
-              className="text-safety-orange font-semibold text-xs sm:text-sm"
-            >
-              <span className="hidden xs:inline">⚙️ </span>Settings
-            </button>
-            <UserButton afterSignOutUrl="/sign-in" />
-          </div>
-        </div>
-      </header>
+  // Month label for the dashboard header
+  const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const clearedCount = jobs.filter((j) => j.day_rate?.met).length;
 
-      <main className="max-w-md mx-auto p-3 sm:p-4">
-        {!selectedJob ? (
-          /* Job Dashboard */
+  return (
+    <div className="min-h-screen bg-pl-bg max-w-md mx-auto" style={{ paddingBottom: selectedJob ? 24 : 96 }}>
+      <main className="px-[18px]">
+        {selectedJob ? null : (
+          <>
+            {/* App header: logo + account */}
+            <div className="flex items-center justify-between pt-5 pb-1">
+              <div className="font-extrabold" style={{ fontSize: 18, letterSpacing: '-0.01em' }}>
+                Profit<span style={{ color: PL_ACCENT }}>Level</span>
+              </div>
+              <UserButton afterSignOutUrl="/sign-in" />
+            </div>
+          </>
+        )}
+
+        {!selectedJob && tab === 'level' ? (
+          /* ===== LEVEL (Dashboard) ===== */
           <div>
+            <div className="pt-2 pb-4">
+              <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>{monthLabel}</div>
+              <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>
+                {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} · {clearedCount} cleared their tier
+              </div>
+            </div>
+
             <MonthOverviewCard />
 
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg sm:text-xl font-bold text-white">Jobs</h2>
+            {/* Recent jobs */}
+            <div className="flex items-center justify-between mt-6 mb-3">
+              <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Recent jobs</div>
+              {jobs.length > 0 && (
+                <button onClick={() => setTab('jobs')} className="font-semibold" style={{ fontSize: 12, color: PL_ACCENT }}>
+                  See all {jobs.length} →
+                </button>
+              )}
+            </div>
+            {jobs.length === 0 ? (
+              <div className="bg-pl-card rounded-[14px] p-6 text-center" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="font-bold" style={{ fontSize: 16 }}>No jobs yet</div>
+                <div className="text-pl-muted-2 mt-1" style={{ fontSize: 13 }}>Add your first job to start scoring days.</div>
+                <button onClick={() => { setTab('jobs'); setShowAddJob(true); }} className="mt-4 font-bold rounded-lg" style={{ fontSize: 14, padding: '10px 18px', background: PL_ACCENT, color: '#1A0E04' }}>
+                  + Add a job
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-[10px]">
+                {jobs.slice(0, 4).map((job) => (
+                  <JobStampCard key={job.id} job={job} onOpen={() => setSelectedJob(job.id)} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : !selectedJob && tab === 'jobs' ? (
+          /* ===== JOBS ===== */
+          <div>
+            <div className="flex items-end justify-between pt-2 pb-4">
+              <div>
+                <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>Jobs</div>
+                <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>
+                  {clearedCount} of {jobs.length} cleared their tier
+                </div>
+              </div>
               <button
                 onClick={() => setShowAddJob(true)}
-                className="bg-safety-orange text-white px-3 py-2 sm:px-4 rounded-lg font-semibold text-sm sm:text-base"
+                className="font-bold rounded-lg"
+                style={{ fontSize: 14, padding: '9px 16px', background: PL_ACCENT, color: '#1A0E04' }}
               >
-                + Add Job
+                + Add
               </button>
             </div>
 
@@ -1603,16 +1633,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Floating Add Expense Button */}
-      <button
-        onClick={() => setShowAddExpenseModal(true)}
-        className="fixed bottom-6 right-6 bg-safety-orange text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold z-40 hover:bg-orange-600 transition"
-        aria-label="Add Expense"
-      >
-        +
-      </button>
-
-      {/* Add Expense Modal */}
+      {/* Add Expense Modal (opened from within job detail when relevant) */}
       <AddExpenseModal
         isOpen={showAddExpenseModal}
         onClose={() => setShowAddExpenseModal(false)}
@@ -1621,6 +1642,9 @@ export default function Home() {
           if (selectedJob) fetchJobDetails(selectedJob);
         }}
       />
+
+      {/* Primary navigation — hidden while viewing a single job (it has its own back) */}
+      {!selectedJob && <BottomNav active={tab} onTab={(t) => setTab(t === 'jobs' ? 'jobs' : 'level')} />}
     </div>
   );
 }

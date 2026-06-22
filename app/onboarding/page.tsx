@@ -2,267 +2,126 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { TIER_ORDER, TIER_LABELS, DEFAULT_DAY_RATE_TARGETS, fmtMoney, PL_ACCENT, type DayTier } from '@/lib/dayRate';
 
-export default function OnboardingPage() {
+export default function Onboarding() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [goals, setGoals] = useState({
-    grossHourlyGoal: '195',
-    netHourlyGoal: '120',
-    yearlyGoalHours: '2000',
+  const [saving, setSaving] = useState(false);
+
+  const [targets, setTargets] = useState<Record<DayTier, string>>({
+    full: String(DEFAULT_DAY_RATE_TARGETS.full),
+    half: String(DEFAULT_DAY_RATE_TARGETS.half),
+    short: String(DEFAULT_DAY_RATE_TARGETS.short),
+    visit: String(DEFAULT_DAY_RATE_TARGETS.visit),
   });
+  const [monthGoal, setMonthGoal] = useState('');
 
-  const handleFinish = async () => {
-    // Save goals to settings
-    await fetch('/api/settings/goals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gross_hourly_goal: parseFloat(goals.grossHourlyGoal),
-        net_hourly_goal: parseFloat(goals.netHourlyGoal),
-        yearly_goal_hours: parseFloat(goals.yearlyGoalHours),
-      }),
-    });
+  const finish = async (saveData: boolean) => {
+    if (saveData) {
+      setSaving(true);
+      try {
+        const body: Record<string, number> = {};
+        for (const t of TIER_ORDER) body[t] = parseFloat(targets[t]) || 0;
+        await fetch('/api/settings/day-rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
+        const goal = parseFloat(monthGoal);
+        if (Number.isFinite(goal) && goal > 0) {
+          const now = new Date();
+          await fetch('/api/monthly-goals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ year: now.getFullYear(), month: now.getMonth() + 1, amount: goal }) });
+        }
+      } catch {
+        /* proceed regardless */
+      } finally {
+        setSaving(false);
+      }
+    }
     router.push('/');
   };
 
+  const fieldStyle = { border: '1px solid rgba(255,255,255,0.1)' } as const;
+  const primaryBtn = { background: PL_ACCENT, color: '#1A0E04' } as const;
+
   return (
-    <div className="min-h-screen bg-dark-gray flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        {/* Progress bar */}
+    <div className="min-h-screen bg-pl-bg flex flex-col items-center justify-center px-[18px]">
+      <div className="w-full max-w-md">
+        {/* Progress */}
         <div className="mb-8">
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-400">Step {step} of 3</span>
-            <span className="text-sm text-safety-orange">{Math.round((step / 3) * 100)}%</span>
+            <span className="text-pl-muted-2" style={{ fontSize: 13 }}>Step {step} of 3</span>
+            <span className="pl-mono" style={{ fontSize: 13, color: PL_ACCENT }}>{Math.round((step / 3) * 100)}%</span>
           </div>
-          <div className="h-2 bg-medium-gray rounded-full overflow-hidden">
-            <div
-              className="h-full bg-safety-orange transition-all duration-300"
-              style={{ width: `${(step / 3) * 100}%` }}
-            />
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: '#1A1814' }}>
+            <div className="h-full transition-all duration-300" style={{ width: `${(step / 3) * 100}%`, background: PL_ACCENT }} />
           </div>
         </div>
 
-        {/* Step 1: Welcome */}
+        {/* Step 1 — Welcome */}
         {step === 1 && (
-          <div className="bg-medium-gray rounded-lg p-8 border border-light-gray">
-            <h1 className="text-3xl font-bold text-white mb-4">
-              Welcome to <span className="text-safety-orange">ProfitLevel</span>! 👋
-            </h1>
-            <p className="text-gray-300 mb-6 text-lg">
-              Let's get you set up in under 2 minutes. We'll help you track your true hourly rate and maximize your profits.
+          <div className="bg-pl-card rounded-2xl p-6" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="font-extrabold" style={{ fontSize: 26, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Welcome to Profit<span style={{ color: PL_ACCENT }}>Level</span></div>
+            <p className="text-pl-text-2 mt-3" style={{ fontSize: 15, lineHeight: 1.5 }}>
+              Score every job against your day rate, and see if you&apos;re on pace for your month. No timesheets, no hourly math.
             </p>
-
-            <div className="space-y-4 mb-8">
-              <div className="flex items-start gap-3">
-                <div className="text-safety-orange text-2xl">💰</div>
-                <div>
-                  <h3 className="font-bold text-white mb-1">See Your Real Earnings</h3>
-                  <p className="text-gray-400 text-sm">
-                    Not just revenue—know your actual profit after all expenses
-                  </p>
+            <div className="flex flex-col gap-3 mt-5">
+              {[['🧾', 'Tag each job by day type', 'Full, half, short, or a site visit.'], ['✓', 'Get a clear stamp', 'Cleared or under your day rate — instantly.'], ['📈', 'Stay on pace', 'A running level on your month and year.']].map((f, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <span style={{ fontSize: 20 }}>{f[0]}</span>
+                  <span>
+                    <span className="block font-bold" style={{ fontSize: 14 }}>{f[1]}</span>
+                    <span className="block text-pl-muted-2" style={{ fontSize: 13 }}>{f[2]}</span>
+                  </span>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-safety-orange text-2xl">📊</div>
-                <div>
-                  <h3 className="font-bold text-white mb-1">Track Every Job</h3>
-                  <p className="text-gray-400 text-sm">
-                    Materials, labor, mileage, and overhead—all in one place
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-safety-orange text-2xl">🎯</div>
-                <div>
-                  <h3 className="font-bold text-white mb-1">Hit Your Goals</h3>
-                  <p className="text-gray-400 text-sm">
-                    Set profit targets and get instant feedback on every job
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
-
-            <button
-              onClick={() => setStep(2)}
-              className="w-full bg-safety-orange text-dark-gray py-4 rounded-lg font-bold text-lg hover:bg-opacity-90 transition-all"
-            >
-              Let's Get Started →
-            </button>
+            <button onClick={() => setStep(2)} className="w-full mt-6 py-3 rounded-lg font-bold" style={{ fontSize: 15, ...primaryBtn }}>Let&apos;s set it up →</button>
           </div>
         )}
 
-        {/* Step 2: Set Goals */}
+        {/* Step 2 — Day-rate targets */}
         {step === 2 && (
-          <div className="bg-medium-gray rounded-lg p-8 border border-light-gray">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              What Are Your Profit Goals? 🎯
-            </h2>
-            <p className="text-gray-300 mb-6">
-              These help you see if each job is worth your time. Don't worry—you can change these anytime.
-            </p>
-
-            <div className="space-y-6 mb-8">
-              <div>
-                <label className="block text-white font-semibold mb-2">
-                  Gross Hourly Goal (before overhead)
-                </label>
-                <p className="text-sm text-gray-400 mb-3">
-                  What do you want to make per hour before fixed costs? Industry average: $150-250/hr
-                </p>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">$</span>
-                  <input
-                    type="number"
-                    value={goals.grossHourlyGoal}
-                    onChange={(e) => setGoals({ ...goals, grossHourlyGoal: e.target.value })}
-                    className="w-full bg-dark-gray border border-light-gray rounded-lg py-3 pl-8 pr-4 text-white text-lg focus:outline-none focus:border-safety-orange"
-                    placeholder="195"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">/hr</span>
+          <div className="bg-pl-card rounded-2xl p-6" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="font-extrabold" style={{ fontSize: 22 }}>Set your day rates</div>
+            <p className="text-pl-text-2 mt-2 mb-4" style={{ fontSize: 14, lineHeight: 1.5 }}>What should each type of day clear in gross profit? You can change these later.</p>
+            <div className="flex flex-col gap-2">
+              {TIER_ORDER.map((t) => (
+                <div key={t} className="flex items-center gap-3 rounded-[11px] p-3" style={{ background: '#13110F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span className="flex-1 font-bold" style={{ fontSize: 14 }}>{TIER_LABELS[t]}</span>
+                  <span className="text-pl-muted" style={{ fontSize: 15 }}>$</span>
+                  <input type="number" inputMode="decimal" value={targets[t]} onChange={(e) => setTargets({ ...targets, [t]: e.target.value })} className="w-24 bg-pl-inset text-pl-text px-2 py-2 rounded-lg pl-mono text-right" style={fieldStyle} />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-white font-semibold mb-2">
-                  Net Hourly Goal (after overhead)
-                </label>
-                <p className="text-sm text-gray-400 mb-3">
-                  What you actually take home per hour. Industry average: $80-150/hr
-                </p>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">$</span>
-                  <input
-                    type="number"
-                    value={goals.netHourlyGoal}
-                    onChange={(e) => setGoals({ ...goals, netHourlyGoal: e.target.value })}
-                    className="w-full bg-dark-gray border border-light-gray rounded-lg py-3 pl-8 pr-4 text-white text-lg focus:outline-none focus:border-safety-orange"
-                    placeholder="120"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">/hr</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white font-semibold mb-2">
-                  Yearly Billable Hours Goal
-                </label>
-                <p className="text-sm text-gray-400 mb-3">
-                  How many hours do you want to work this year? Standard: 1,800-2,200 hrs
-                </p>
-                <input
-                  type="number"
-                  value={goals.yearlyGoalHours}
-                  onChange={(e) => setGoals({ ...goals, yearlyGoalHours: e.target.value })}
-                  className="w-full bg-dark-gray border border-light-gray rounded-lg py-3 px-4 text-white text-lg focus:outline-none focus:border-safety-orange"
-                  placeholder="2000"
-                />
-              </div>
+              ))}
             </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep(1)}
-                className="flex-1 bg-dark-gray border border-light-gray text-white py-4 rounded-lg font-bold hover:bg-opacity-80 transition-all"
-              >
-                ← Back
-              </button>
-              <button
-                onClick={() => setStep(3)}
-                className="flex-1 bg-safety-orange text-dark-gray py-4 rounded-lg font-bold hover:bg-opacity-90 transition-all"
-              >
-                Continue →
-              </button>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setStep(1)} className="flex-1 py-3 rounded-lg font-semibold bg-pl-panel text-pl-text" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>← Back</button>
+              <button onClick={() => setStep(3)} className="flex-1 py-3 rounded-lg font-bold" style={primaryBtn}>Continue →</button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Quick Tutorial */}
+        {/* Step 3 — First monthly goal */}
         {step === 3 && (
-          <div className="bg-medium-gray rounded-lg p-8 border border-light-gray">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Here's How It Works 📚
-            </h2>
-            <p className="text-gray-300 mb-6">
-              Three simple steps to track profitability on every job:
+          <div className="bg-pl-card rounded-2xl p-6" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="font-extrabold" style={{ fontSize: 22 }}>This month&apos;s goal</div>
+            <p className="text-pl-text-2 mt-2 mb-4" style={{ fontSize: 14, lineHeight: 1.5 }}>
+              How much gross profit do you want to make this month? Set different numbers each month later — the year is the sum.
             </p>
-
-            <div className="space-y-6 mb-8">
-              <div className="bg-dark-gray p-5 rounded-lg border border-light-gray">
-                <div className="flex items-start gap-4">
-                  <div className="bg-safety-orange text-dark-gray w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
-                    1
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Add a Job</h3>
-                    <p className="text-gray-400 text-sm">
-                      Click "Add Job" and enter the job name, contract price, date, and hours worked. Takes 30 seconds.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-dark-gray p-5 rounded-lg border border-light-gray">
-                <div className="flex items-start gap-4">
-                  <div className="bg-safety-orange text-dark-gray w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Track Costs</h3>
-                    <p className="text-gray-400 text-sm">
-                      Click on the job and add materials, labor costs, and mileage. Everything auto-calculates your profit.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-dark-gray p-5 rounded-lg border border-light-gray">
-                <div className="flex items-start gap-4">
-                  <div className="bg-safety-orange text-dark-gray w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
-                    3
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg mb-2">See Your Numbers</h3>
-                    <p className="text-gray-400 text-sm">
-                      Instantly see gross profit, net profit, and your true hourly rate. Track overhead in the "Overhead" tab.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center gap-2 rounded-[11px] p-3" style={{ background: '#13110F', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span className="text-pl-muted" style={{ fontSize: 20 }}>$</span>
+              <input type="number" inputMode="decimal" autoFocus value={monthGoal} placeholder="e.g. 7500" onChange={(e) => setMonthGoal(e.target.value)} className="flex-1 bg-transparent text-pl-text pl-mono" style={{ fontSize: 22, outline: 'none', border: 'none' }} />
             </div>
-
-            <div className="bg-dark-gray p-4 rounded-lg border border-safety-orange mb-8">
-              <p className="text-sm text-gray-300">
-                <span className="text-safety-orange font-bold">💡 Pro Tip:</span> Check the "Financials" page to see monthly and yearly summaries of your business health.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep(2)}
-                className="flex-1 bg-dark-gray border border-light-gray text-white py-4 rounded-lg font-bold hover:bg-opacity-80 transition-all"
-              >
-                ← Back
-              </button>
-              <button
-                onClick={handleFinish}
-                className="flex-1 bg-safety-orange text-dark-gray py-4 rounded-lg font-bold hover:bg-opacity-90 transition-all"
-              >
-                Go to Dashboard! 🚀
-              </button>
-            </div>
+            {monthGoal && parseFloat(monthGoal) > 0 && (
+              <div className="text-pl-muted-2 mt-2" style={{ fontSize: 12 }}>≈ {fmtMoney(parseFloat(monthGoal) * 12)} a year if every month matched.</div>
+            )}
+            <button onClick={() => finish(true)} disabled={saving} className="w-full mt-5 py-3 rounded-lg font-bold" style={{ fontSize: 15, ...primaryBtn, opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Setting up…' : 'Go to dashboard 🚀'}
+            </button>
+            <button onClick={() => setStep(2)} className="w-full mt-2 py-2 font-semibold text-pl-muted" style={{ fontSize: 13 }}>← Back</button>
           </div>
         )}
 
-        {/* Skip button */}
         {step < 3 && (
-          <button
-            onClick={() => router.push('/')}
-            className="w-full text-center text-gray-400 hover:text-white mt-4 text-sm"
-          >
-            Skip for now
-          </button>
+          <button onClick={() => finish(false)} className="w-full mt-4 font-semibold text-pl-muted-2" style={{ fontSize: 13 }}>Skip for now</button>
         )}
       </div>
     </div>

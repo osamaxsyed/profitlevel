@@ -1,6 +1,7 @@
 'use client';
 
 import { SignInButton } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 // Redesigned landing page — matches the ProfitLevel Redesign Brief mockup.
 // Static marketing content; CTAs use Clerk modal → /onboarding (preserved from prior flow).
@@ -24,12 +25,14 @@ function Cta({ children, className = '', style = {} }: { children: React.ReactNo
 }
 
 export default function LandingPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-pl-bg text-pl-text">
       {/* Top bar */}
       <div className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-10 py-[14px]" style={{ background: 'rgba(16,15,13,0.82)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="font-extrabold" style={{ fontSize: 18, letterSpacing: '-0.01em' }}>Profit<span style={{ color: ACCENT }}>Level</span></div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/demo')} className="font-bold text-pl-muted" style={{ fontSize: 13 }}>Live demo</button>
           <SignInButton mode="modal">
             <button className="font-bold text-pl-muted" style={{ fontSize: 13 }}>Sign in</button>
           </SignInButton>
@@ -51,7 +54,7 @@ export default function LandingPage() {
         </p>
         <div className="flex flex-wrap gap-3 mt-[30px]">
           <Cta className="font-bold rounded-[10px]" style={{ fontSize: 15, padding: '14px 24px', background: ACCENT, color: '#1A0E04', boxShadow: '0 6px 20px rgba(255,106,26,0.28)' }}>Start tracking free</Cta>
-          <a href="#math" className="inline-flex items-center font-semibold rounded-[10px]" style={{ fontSize: 15, padding: '14px 22px', background: '#1C1A16', border: '1px solid rgba(255,255,255,0.1)', color: '#E6DECF' }}>See how the math works</a>
+          <button onClick={() => router.push('/demo')} className="inline-flex items-center font-semibold rounded-[10px]" style={{ fontSize: 15, padding: '14px 22px', background: '#1C1A16', border: '1px solid rgba(255,255,255,0.1)', color: '#E6DECF' }}>Open the live demo</button>
         </div>
 
         {/* Hero artifacts */}

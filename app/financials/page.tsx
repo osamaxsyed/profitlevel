@@ -1,7 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import PageHeader from '../components/pl/PageHeader';
+import BottomNav from '../components/pl/BottomNav';
+import { fmtMoney, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
+
+interface DayRate {
+  total_day_units: number;
+  target_total: number;
+  actual_total: number;
+  avg_per_day: number | null;
+  jobs_tagged: number;
+  jobs_met: number;
+}
 
 interface FinancialSummary {
   period: string;
@@ -17,9 +28,7 @@ interface FinancialSummary {
   };
   net_profit: number;
   job_count: number;
-  billable_hours: number;
-  hourly_burden_rate: number;
-  yearly_goal_hours: number;
+  day_rate?: DayRate;
   tax_estimate: {
     taxable_income: number;
     estimated_tax_15pct: number;
@@ -28,279 +37,162 @@ interface FinancialSummary {
   };
 }
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 export default function FinancialsPage() {
-  const router = useRouter();
   const [view, setView] = useState<'monthly' | 'yearly' | 'alltime'>('monthly');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
 
-  useEffect(() => {
-    fetchSummary();
+  const fetchSummary = useCallback(async () => {
+    let params = '';
+    if (view === 'monthly') params = `?month=${selectedMonth}`;
+    else if (view === 'yearly') params = `?year=${selectedYear}`;
+    try {
+      const res = await fetch(`/api/financial-summary${params}`);
+      if (res.ok) setSummary(await res.json());
+    } catch {
+      /* leave prior summary */
+    }
   }, [view, selectedMonth, selectedYear]);
 
-  const fetchSummary = async () => {
-    let params = '';
-    if (view === 'monthly') {
-      params = `?month=${selectedMonth}`;
-    } else if (view === 'yearly') {
-      params = `?year=${selectedYear}`;
-    }
-    // For alltime, no params needed
-
-    const res = await fetch(`/api/financial-summary${params}`);
-    const data = await res.json();
-    setSummary(data);
-  };
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
 
   const changeMonth = (delta: number) => {
     const [year, month] = selectedMonth.split('-').map(Number);
-    const date = new Date(year, month - 1, 1); // month is 0-indexed in Date
+    const date = new Date(year, month - 1, 1);
     date.setMonth(date.getMonth() + delta);
-    const newYear = date.getFullYear();
-    const newMonth = String(date.getMonth() + 1).padStart(2, '0');
-    setSelectedMonth(`${newYear}-${newMonth}`);
+    setSelectedMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
   };
 
-  const changeYear = (delta: number) => {
-    const newYear = parseInt(selectedYear) + delta;
-    setSelectedYear(newYear.toString());
+  const periodLabel = () => {
+    if (view === 'alltime') return 'All time';
+    if (view === 'yearly') return selectedYear;
+    const [y, m] = selectedMonth.split('-').map(Number);
+    return `${MONTH_NAMES[m - 1]} ${y}`;
   };
-
-  if (!summary) return <div className="min-h-screen bg-dark-gray p-4 text-white">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-dark-gray">
-      <header className="bg-medium-gray border-b border-light-gray px-4 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">
-          Profit<span className="text-safety-orange">Level</span>
-        </h1>
-        <div className="flex gap-3">
+    <div className="min-h-screen bg-pl-bg max-w-md mx-auto px-[18px]" style={{ paddingBottom: 96 }}>
+      <PageHeader title="Financials" subtitle={periodLabel()} />
+
+      {/* View toggle */}
+      <div className="flex gap-1 p-1 rounded-[10px] mb-3" style={{ background: '#1A1814', border: '1px solid rgba(255,255,255,0.07)' }}>
+        {(['monthly', 'yearly', 'alltime'] as const).map((v) => (
           <button
-            onClick={() => router.push('/overhead')}
-            className="text-safety-orange font-semibold text-sm"
+            key={v}
+            onClick={() => setView(v)}
+            className="flex-1 py-[7px] rounded-[7px] font-bold"
+            style={{
+              fontSize: 12,
+              letterSpacing: '0.04em',
+              background: view === v ? PL_ACCENT : 'transparent',
+              color: view === v ? '#1A0E04' : '#9A9183',
+            }}
           >
-            🏢 Overhead
+            {v === 'monthly' ? 'Month' : v === 'yearly' ? 'Year' : 'All time'}
           </button>
-          <button
-            onClick={() => router.push('/financials')}
-            className="text-safety-orange font-semibold text-sm"
-          >
-            📊 Financials
-          </button>
-          <button
-            onClick={() => router.push('/settings')}
-            className="text-safety-orange font-semibold text-sm"
-          >
-            ⚙️ Settings
-          </button>
+        ))}
+      </div>
+
+      {/* Period stepper */}
+      {view !== 'alltime' && (
+        <div className="flex gap-2 items-center mb-3">
+          {view === 'monthly' ? (
+            <>
+              <button onClick={() => changeMonth(-1)} className="bg-pl-card text-pl-text rounded px-[12px] py-[8px]" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>←</button>
+              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="flex-1 bg-pl-card text-pl-text px-3 py-2 rounded" style={{ border: '1px solid rgba(255,255,255,0.08)' }} />
+              <button onClick={() => changeMonth(1)} className="bg-pl-card text-pl-text rounded px-[12px] py-[8px]" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>→</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setSelectedYear(String(+selectedYear - 1))} className="bg-pl-card text-pl-text rounded px-[12px] py-[8px]" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>←</button>
+              <input type="number" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} min="2020" max="2100" className="flex-1 bg-pl-card text-pl-text px-3 py-2 rounded pl-mono" style={{ border: '1px solid rgba(255,255,255,0.08)' }} />
+              <button onClick={() => setSelectedYear(String(+selectedYear + 1))} className="bg-pl-card text-pl-text rounded px-[12px] py-[8px]" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>→</button>
+            </>
+          )}
         </div>
-      </header>
+      )}
 
-      <main className="max-w-md mx-auto p-4">
-        <button
-          onClick={() => router.push('/')}
-          className="mb-4 text-safety-orange font-semibold"
-        >
-          ← Back to Dashboard
-        </button>
+      {!summary ? (
+        <div className="text-pl-muted py-10 text-center" style={{ fontSize: 14 }}>Loading…</div>
+      ) : (
+        <>
+          {/* Revenue & net profit */}
+          <div className="bg-pl-card rounded-2xl p-5 mb-3" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Revenue</div>
+            <div className="pl-mono font-semibold" style={{ fontSize: 30, color: PL_ACCENT, letterSpacing: '-0.02em' }}>{fmtMoney(summary.revenue)}</div>
+            <div className="text-pl-muted-2" style={{ fontSize: 12 }}>{summary.job_count} {summary.job_count === 1 ? 'job' : 'jobs'}</div>
 
-        <h2 className="text-2xl font-bold text-white mb-4">Financial Dashboard</h2>
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Net profit</div>
+              <div className="pl-mono font-semibold" style={{ fontSize: 30, letterSpacing: '-0.02em', color: summary.net_profit >= 0 ? '#F2EDE4' : PL_CLAY }}>{fmtMoney(summary.net_profit)}</div>
+              <div className="text-pl-muted-2" style={{ fontSize: 12 }}>{summary.revenue > 0 ? `${((summary.net_profit / summary.revenue) * 100).toFixed(1)}% margin` : '—'}</div>
+            </div>
 
-        {/* View Toggle */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setView('monthly')}
-            className={`flex-1 py-2 rounded font-semibold ${view === 'monthly' ? 'bg-safety-orange text-white' : 'bg-medium-gray text-gray-400'}`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setView('yearly')}
-            className={`flex-1 py-2 rounded font-semibold ${view === 'yearly' ? 'bg-safety-orange text-white' : 'bg-medium-gray text-gray-400'}`}
-          >
-            Yearly
-          </button>
-          <button
-            onClick={() => setView('alltime')}
-            className={`flex-1 py-2 rounded font-semibold ${view === 'alltime' ? 'bg-safety-orange text-white' : 'bg-medium-gray text-gray-400'}`}
-          >
-            All Time
-          </button>
-        </div>
-
-        {/* Period Selector */}
-        {view !== 'alltime' && (
-          <div className="mb-4">
-            {view === 'monthly' ? (
-              <div className="flex gap-2 items-center">
-                <button
-                  onClick={() => changeMonth(-1)}
-                  className="bg-medium-gray text-white px-3 py-2 rounded hover:bg-light-gray"
-                >
-                  ←
-                </button>
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="flex-1 bg-medium-gray text-white px-3 py-2 rounded"
-                />
-                <button
-                  onClick={() => changeMonth(1)}
-                  className="bg-medium-gray text-white px-3 py-2 rounded hover:bg-light-gray"
-                >
-                  →
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2 items-center">
-                <button
-                  onClick={() => changeYear(-1)}
-                  className="bg-medium-gray text-white px-3 py-2 rounded hover:bg-light-gray"
-                >
-                  ←
-                </button>
-                <input
-                  type="number"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  min="2020"
-                  max="2100"
-                  className="flex-1 bg-medium-gray text-white px-3 py-2 rounded"
-                />
-                <button
-                  onClick={() => changeYear(1)}
-                  className="bg-medium-gray text-white px-3 py-2 rounded hover:bg-light-gray"
-                >
-                  →
-                </button>
+            {summary.day_rate && summary.day_rate.jobs_tagged > 0 && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Avg per day</div>
+                <div className="pl-mono font-semibold" style={{ fontSize: 24, color: summary.day_rate.actual_total >= summary.day_rate.target_total ? PL_ACCENT : PL_CLAY }}>
+                  {summary.day_rate.avg_per_day != null ? fmtMoney(summary.day_rate.avg_per_day) : '—'}<span className="text-pl-muted-2" style={{ fontSize: 14 }}>/day</span>
+                </div>
+                <div className="text-pl-muted-2" style={{ fontSize: 12 }}>{summary.day_rate.jobs_met}/{summary.day_rate.jobs_tagged} jobs cleared · {summary.day_rate.total_day_units} day-units</div>
               </div>
             )}
           </div>
-        )}
 
-        {/* Revenue & Net Profit */}
-        <div className="bg-medium-gray p-4 rounded-lg mb-4">
-          <div className="mb-4">
-            <div className="text-sm text-gray-400">Total Revenue</div>
-            <div className="text-3xl font-bold text-safety-orange">${summary.revenue.toFixed(2)}</div>
-            <div className="text-xs text-gray-500">{summary.job_count} jobs • {summary.billable_hours.toFixed(1)} hours</div>
-          </div>
-          <div className="mb-4">
-            <div className="text-sm text-gray-400">Net Profit</div>
-            <div className={`text-3xl font-bold ${summary.net_profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              ${summary.net_profit.toFixed(2)}
-            </div>
-            <div className="text-xs text-gray-500">
-              {summary.revenue > 0 ? `${((summary.net_profit / summary.revenue) * 100).toFixed(1)}% margin` : 'N/A'}
-            </div>
-          </div>
-          {summary.billable_hours > 0 && (
-            <div className="pt-3 border-t border-light-gray">
-              <div className="text-sm text-gray-400">Net Hourly Rate</div>
-              <div className="text-2xl font-bold text-white">
-                ${(summary.net_profit / summary.billable_hours).toFixed(2)}/hr
+          {/* Expense buckets */}
+          <div className="bg-pl-card rounded-2xl p-5 mb-3" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="font-bold uppercase text-pl-muted-2 mb-3" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Where the money went</div>
+            <div className="flex flex-col gap-2 pl-mono">
+              {[
+                { label: 'Materials & labor', val: summary.expenses.bucket_a_direct, note: `Materials ${fmtMoney(summary.expenses.materials)} · Labor ${fmtMoney(summary.expenses.labor)}` },
+                { label: 'Mileage', val: summary.expenses.bucket_b_variable, note: 'Variable — IRS standard rate' },
+                { label: 'Overhead', val: summary.expenses.bucket_c_fixed, note: 'Fixed — insurance, software, tools' },
+              ].map((b) => (
+                <div key={b.label} className="rounded-[9px] p-3" style={{ background: '#13110F', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex justify-between items-center">
+                    <span style={{ fontFamily: 'var(--font-archivo)', fontWeight: 600, fontSize: 14 }}>{b.label}</span>
+                    <span className="font-semibold" style={{ fontSize: 14, color: PL_CLAY }}>−{fmtMoney(b.val)}</span>
+                  </div>
+                  <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 11, fontFamily: 'var(--font-archivo)' }}>{b.note}</div>
+                </div>
+              ))}
+              <div className="flex justify-between items-center rounded-[9px] p-3 mt-1" style={{ background: '#0C0B09', border: `1px solid rgba(255,106,26,0.3)` }}>
+                <span style={{ fontFamily: 'var(--font-archivo)', fontWeight: 700, fontSize: 14 }}>Total expenses</span>
+                <span className="font-semibold" style={{ fontSize: 18, color: PL_ACCENT }}>−{fmtMoney(summary.expenses.total)}</span>
               </div>
-              <div className="text-xs text-gray-500">
-                Net Profit ÷ Billable Hours
-              </div>
+            </div>
+          </div>
+
+          {/* Tax estimate */}
+          <div className="bg-pl-card rounded-2xl p-5 mb-3" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Tax set-aside estimate</div>
+            <div className="pl-mono font-semibold mt-1" style={{ fontSize: 22 }}>{fmtMoney(summary.tax_estimate.taxable_income)}</div>
+            <div className="text-pl-muted-2" style={{ fontSize: 12 }}>taxable income (revenue − all costs)</div>
+            <div className="flex flex-col gap-2 mt-3 pl-mono" style={{ fontSize: 14 }}>
+              {[['Set aside @ 15%', summary.tax_estimate.estimated_tax_15pct, '#F2EDE4'], ['@ 25%', summary.tax_estimate.estimated_tax_25pct, '#E8B530'], ['@ 30%', summary.tax_estimate.estimated_tax_30pct, PL_CLAY]].map((r, i) => (
+                <div key={i} className="flex justify-between">
+                  <span className="text-pl-text-2" style={{ fontFamily: 'var(--font-archivo)' }}>{r[0] as string}</span>
+                  <span className="font-semibold" style={{ color: r[2] as string }}>{fmtMoney(r[1] as number)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="text-pl-faint mt-3" style={{ fontSize: 11 }}>Rough estimate — confirm with a tax professional.</div>
+          </div>
+
+          {view === 'monthly' && summary.job_count === 0 && (
+            <div className="rounded-[11px] p-3" style={{ background: 'rgba(232,181,48,0.12)', border: '1px solid rgba(232,181,48,0.4)', color: '#E8B530', fontSize: 13 }}>
+              No jobs this month, but overhead still applies: {fmtMoney(summary.expenses.bucket_c_fixed)}.
             </div>
           )}
-        </div>
+        </>
+      )}
 
-        {/* Three-Bucket Expense Breakdown */}
-        <div className="bg-medium-gray p-4 rounded-lg mb-4">
-          <h3 className="text-lg font-bold text-white mb-3">📊 Three-Bucket System</h3>
-
-          <div className="space-y-3">
-            {/* Bucket A */}
-            <div className="bg-light-gray p-3 rounded">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-white font-semibold">🔧 Bucket A - Direct Costs</span>
-                <span className="text-safety-orange font-bold">${summary.expenses.bucket_a_direct.toFixed(2)}</span>
-              </div>
-              <div className="text-xs text-gray-400 space-y-1">
-                <div>Materials: ${summary.expenses.materials.toFixed(2)}</div>
-                <div>Labor/Subs: ${summary.expenses.labor.toFixed(2)}</div>
-              </div>
-            </div>
-
-            {/* Bucket B */}
-            <div className="bg-light-gray p-3 rounded">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-white font-semibold">🚗 Bucket B - Variable Costs</span>
-                <span className="text-safety-orange font-bold">${summary.expenses.bucket_b_variable.toFixed(2)}</span>
-              </div>
-              <div className="text-xs text-gray-400">
-                Mileage: ${summary.expenses.mileage.toFixed(2)}
-              </div>
-            </div>
-
-            {/* Bucket C */}
-            <div className="bg-light-gray p-3 rounded">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-white font-semibold">🏢 Bucket C - Fixed Overhead</span>
-                <span className="text-safety-orange font-bold">${summary.expenses.bucket_c_fixed.toFixed(2)}</span>
-              </div>
-              <div className="text-xs text-gray-400">
-                <div>Insurance, Software, Tools, etc.</div>
-                <div className="mt-1">
-                  Hourly Burden: ${summary.hourly_burden_rate.toFixed(2)}/hr
-                </div>
-                <div className="text-xs text-gray-500">
-                  (${summary.expenses.bucket_c_fixed.toFixed(0)} YTD overhead ÷ {summary.yearly_goal_hours} goal hours)
-                </div>
-              </div>
-            </div>
-
-            {/* Total */}
-            <div className="bg-dark-gray p-3 rounded border border-safety-orange">
-              <div className="flex justify-between items-center">
-                <span className="text-white font-bold">Total Expenses (A+B+C)</span>
-                <span className="text-safety-orange font-bold text-xl">${summary.expenses.total.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tax Estimator */}
-        <div className="bg-medium-gray p-4 rounded-lg mb-4">
-          <h3 className="text-lg font-bold text-white mb-3">💰 Tax Estimator</h3>
-
-          <div className="mb-3">
-            <div className="text-sm text-gray-400">Estimated Taxable Income</div>
-            <div className="text-2xl font-bold text-white">${summary.tax_estimate.taxable_income.toFixed(2)}</div>
-            <div className="text-xs text-gray-500">Revenue - All Expenses (A+B+C)</div>
-          </div>
-
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">@ 15% tax rate:</span>
-              <span className="text-white font-semibold">${summary.tax_estimate.estimated_tax_15pct.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">@ 25% tax rate:</span>
-              <span className="text-yellow-500 font-semibold">${summary.tax_estimate.estimated_tax_25pct.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">@ 30% tax rate:</span>
-              <span className="text-red-500 font-semibold">${summary.tax_estimate.estimated_tax_30pct.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div className="mt-3 text-xs text-gray-500 bg-light-gray p-2 rounded">
-            💡 Tip: Consult with a tax professional for accurate estimates
-          </div>
-        </div>
-
-        {/* Monthly Performance Note */}
-        {view === 'monthly' && summary.job_count === 0 && (
-          <div className="bg-yellow-500/20 border border-yellow-500 rounded p-3 text-yellow-400 text-sm">
-            ⚠️ No jobs this month, but overhead costs still apply: ${summary.expenses.bucket_c_fixed.toFixed(2)}
-          </div>
-        )}
-      </main>
+      <BottomNav active="more" />
     </div>
   );
 }

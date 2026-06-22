@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { fmtMoney, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
+import BottomNav from '../components/pl/BottomNav';
 
 interface MonthRow {
   month: number;
@@ -25,7 +25,6 @@ interface GoalsData {
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function Goals() {
-  const router = useRouter();
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);
   const [data, setData] = useState<GoalsData | null>(null);
@@ -68,20 +67,18 @@ export default function Goals() {
   const yearAhead = data.pace_actual >= data.pace_target;
 
   return (
-    <div className="min-h-screen bg-pl-bg max-w-md mx-auto px-[18px] pb-8">
+    <div className="min-h-screen bg-pl-bg max-w-md mx-auto px-[18px]" style={{ paddingBottom: 96 }}>
       {/* Header */}
-      <div className="flex items-center justify-between pt-5 pb-3">
-        <button onClick={() => router.push('/')} className="font-semibold text-pl-muted" style={{ fontSize: 13 }}>← Back</button>
+      <div className="flex items-end justify-between pt-6 pb-4">
+        <div>
+          <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>Monthly goals</div>
+          <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>Set each month. The year is the sum.</div>
+        </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setYear(year - 1)} className="bg-pl-card text-pl-text rounded px-[10px] py-[2px]" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>‹</button>
-          <span className="font-bold" style={{ fontSize: 16 }}>{year}</span>
+          <span className="font-bold pl-mono" style={{ fontSize: 16 }}>{year}</span>
           <button onClick={() => setYear(year + 1)} className="bg-pl-card text-pl-text rounded px-[10px] py-[2px]" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>›</button>
         </div>
-      </div>
-
-      <div className="pb-4">
-        <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>Monthly goals</div>
-        <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>Set each month. The year is the sum.</div>
       </div>
 
       {/* Annual target card */}
@@ -166,6 +163,8 @@ export default function Goals() {
           </div>
         </div>
       )}
+
+      <BottomNav active="goals" />
     </div>
   );
 }
