@@ -1,21 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #1a1a1a;
-  --foreground: #ffffff;
+  /* ProfitLevel redesign palette */
+  --background: #100F0D;
+  --foreground: #F2EDE4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-safety-orange: #FF6600;
-  --color-dark-gray: #1a1a1a;
-  --color-medium-gray: #2d2d2d;
-  --color-light-gray: #404040;
+
+  /* Surfaces */
+  --color-pl-bg: #100F0D;        /* page background */
+  --color-pl-card: #1A1814;      /* primary card */
+  --color-pl-panel: #13110F;     /* subtle inset panel / chips */
+  --color-pl-panel-2: #15130F;   /* secondary panel (year strip) */
+  --color-pl-inset: #0C0B09;     /* deep inset (progress tube track) */
+  --color-pl-phone: #050505;     /* darkest */
+
+  /* Text scale */
+  --color-pl-text: #F2EDE4;      /* primary */
+  --color-pl-text-2: #B6AD9D;    /* secondary */
+  --color-pl-muted: #9A9183;     /* muted */
+  --color-pl-muted-2: #8A8073;   /* more muted (labels) */
+  --color-pl-faint: #6E665A;     /* faintest */
+
+  /* Accents */
+  --color-pl-accent: #FF6A1A;    /* cleared / on-pace (orange) */
+  --color-pl-accent-ink: #1A0E04;/* text on accent */
+  --color-pl-clay: #E0764E;      /* missed / under */
+
+  /* Fonts (wired in layout.tsx) */
+  --font-archivo: var(--font-archivo);
+  --font-mono: var(--font-plex-mono);
+
+  /* Custom breakpoint used in the header */
+  --breakpoint-xs: 400px;
+}
+
+/* Legacy tokens kept so any un-migrated markup still renders on the dark theme */
+@theme inline {
+  --color-safety-orange: #FF6A1A;
+  --color-dark-gray: #100F0D;
+  --color-medium-gray: #1A1814;
+  --color-light-gray: #2A2620;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-pl-bg);
+  color: var(--color-pl-text);
+  font-family: var(--font-archivo), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+::selection {
+  background: var(--color-pl-accent);
+  color: var(--color-pl-bg);
+}
+
+/* Numeric / money styling helper */
+.pl-mono {
+  font-family: var(--font-mono), 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Hidden scrollbar for app scroll areas */
+.pl-scroll::-webkit-scrollbar { width: 0; height: 0; }
+.pl-scroll { scrollbar-width: none; }

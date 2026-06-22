@@ -7,6 +7,8 @@ import type { JobWithCosts, Material, Labor, Mileage, HoursLog } from '@/lib/typ
 import MonthOverviewCard from './components/MonthOverview';
 import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
 import AddExpenseModal from './components/AddExpenseModal';
+import JobStampCard from './components/pl/JobStampCard';
+import { tierSummary, resultTokens, TIER_LABELS, TIER_ORDER, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
 
 const DAY_TIER_OPTIONS = [
   { value: 'full', label: 'Full day' },
@@ -858,50 +860,8 @@ export default function Home() {
                 </div>
               ) : (
                 filteredJobs.map((job) => (
-                  <div
-                    key={job.id}
-                    onClick={() => setSelectedJob(job.id)}
-                    className="bg-medium-gray p-3 sm:p-4 rounded-lg cursor-pointer hover:bg-light-gray transition"
-                  >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-white">{job.name}</h3>
-                      {job.client_name && (
-                        <div className="text-xs text-safety-orange">
-                          {job.client_name}
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-500">
-                        {new Date(job.job_date).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <span className="text-sm text-gray-400">{formatCurrency(job.contract_price)}</span>
-                  </div>
-                  <div className="text-sm text-gray-400 space-y-1">
-                    <div>Materials: {formatCurrency(job.materials_total)}</div>
-                    <div>Labor: {formatCurrency(job.labor_total)}</div>
-                    <div>Mileage: {formatCurrency(job.mileage_total)}</div>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-light-gray">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-white font-semibold">Gross Profit:</span>
-                      <span className={`text-lg font-bold ${job.gross_profit >= 0 ? 'text-safety-orange' : 'text-red-500'}`}>
-                        {formatCurrency(job.gross_profit)}
-                      </span>
-                    </div>
-                    {job.day_rate && job.day_rate.met !== null && (
-                      <div className="flex justify-between items-center text-sm mt-1">
-                        <span className="text-gray-400">
-                          Day rate ({job.day_rate.day_count}d, goal {formatCurrency(job.day_rate.target)}):
-                        </span>
-                        <span className={`font-semibold ${job.day_rate.met ? 'text-green-500' : 'text-red-500'}`}>
-                          {job.day_rate.met ? '✓' : '✗'} {formatCurrency(job.day_rate.per_day || 0)}/day
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
+                  <JobStampCard key={job.id} job={job} showSub onOpen={() => setSelectedJob(job.id)} />
+                ))
               )}
             </div>
           </div>
@@ -1021,31 +981,47 @@ export default function Home() {
                         </button>
                       </div>
                     </div>
-                    <div className="mt-3 space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Contract Price:</span>
-                        <span className="text-white font-semibold">{formatCurrency(currentJob.contract_price)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Direct Costs:</span>
-                        <span className="text-white">
-                          {formatCurrency(currentJob.materials_total + currentJob.labor_total + currentJob.mileage_total)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-light-gray space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-white font-semibold text-lg">Gross Profit:</span>
-                        <span className={`text-2xl font-bold ${currentJob.gross_profit >= 0 ? 'text-safety-orange' : 'text-red-500'}`}>
-                          {formatCurrency(currentJob.gross_profit)}
-                        </span>
-                      </div>
-                      {currentJob.contract_price > 0 && (
-                        <div className="text-xs text-gray-500 mt-2">
-                          Profit Margin: {formatNumber((currentJob.gross_profit / currentJob.contract_price) * 100, 1)}%
+                    {/* The math — ledger */}
+                    <div className="mt-4 pt-4 border-t border-light-gray pl-mono">
+                      <div className="font-bold uppercase text-pl-muted-2 mb-1" style={{ fontSize: 11, letterSpacing: '0.16em', fontFamily: 'var(--font-archivo)' }}>The math</div>
+                      {[
+                        { label: 'Revenue', val: formatCurrency(currentJob.contract_price), color: '#F2EDE4', neg: false },
+                        { label: 'Materials', val: formatCurrency(currentJob.materials_total), color: PL_CLAY, neg: true },
+                        { label: 'Labor / helper', val: formatCurrency(currentJob.labor_total), color: PL_CLAY, neg: true },
+                        { label: 'Mileage', val: formatCurrency(currentJob.mileage_total), color: PL_CLAY, neg: true },
+                      ].map((row) => (
+                        <div key={row.label} className="flex justify-between py-3" style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)' }}>
+                          <span className="text-pl-text-2" style={{ fontSize: 14 }}>{row.label}</span>
+                          <span className="font-semibold" style={{ fontSize: 14, color: row.color }}>{row.neg ? '−' : ''}{row.val}</span>
                         </div>
-                      )}
+                      ))}
+                      <div className="flex justify-between items-baseline pt-4 pb-2">
+                        <span className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 12, letterSpacing: '0.06em', fontFamily: 'var(--font-archivo)' }}>Gross profit</span>
+                        <span className="font-semibold" style={{ fontSize: 28 }}>{formatCurrency(currentJob.gross_profit)}</span>
+                      </div>
                     </div>
+                    {/* Result banner */}
+                    {currentJob.day_rate && currentJob.day_rate.met !== null && (() => {
+                      const dr = currentJob.day_rate!;
+                      const tok = resultTokens(dr.met);
+                      return (
+                        <div className="mt-2 p-[14px] rounded-[11px]" style={{ background: tok.bg, border: `1px solid ${tok.bd}` }}>
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold" style={{ fontSize: 15, color: tok.color }}>
+                              {dr.met ? '✓ Cleared the day rate' : '✗ Under the day rate'}
+                            </span>
+                            <span className="pl-mono font-semibold" style={{ fontSize: 17, color: tok.color }}>
+                              {dr.delta >= 0 ? '+' : '−'}{formatCurrency(Math.abs(dr.delta))}
+                            </span>
+                          </div>
+                          <div className="text-pl-muted mt-[5px]" style={{ fontSize: 12 }}>
+                            {dr.met
+                              ? `Gross beat your ${formatCurrency(dr.target)} target (${dr.day_count} day${dr.day_count > 1 ? 's' : ''}). Priced right.`
+                              : `Short of your ${formatCurrency(dr.target)} target — quote higher or trim costs next time.`}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -1464,46 +1440,36 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Day Type / day-rate verdict */}
+                {/* Day Type panel — tier grid (matches redesign) */}
                 <div className="mb-6">
-                  <div className="bg-medium-gray p-4 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-bold text-white">Day Type</h3>
-                      {currentJob.day_units && Object.keys(currentJob.day_units).length > 0 ? (
-                        <div className="flex gap-2">
-                          {(['full', 'half', 'short', 'visit'] as const).map((t) => (
-                            (currentJob.day_units?.[t] || 0) > 0 && (
-                              <span key={t} className="text-sm bg-light-gray px-2 py-0.5 rounded text-gray-200 capitalize">
-                                {currentJob.day_units![t]} {t}
-                              </span>
-                            )
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">Not tagged — set in Edit</span>
-                      )}
+                  <div className="bg-pl-card p-[18px] rounded-2xl" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="flex items-baseline justify-between">
+                      <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Day type</div>
+                      <div className="text-pl-faint" style={{ fontSize: 11 }}>{tierSummary(currentJob.day_units ?? null)}</div>
                     </div>
-
-                    {currentJob.day_rate && currentJob.day_rate.met !== null && (
-                      <div className="mt-3 pt-3 border-t border-light-gray space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Day-rate target ({currentJob.day_rate.day_count} day{currentJob.day_rate.day_count > 1 ? 's' : ''})</span>
-                          <span className="text-white">{formatCurrency(currentJob.day_rate.target)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Actual gross / day</span>
-                          <span className={`font-semibold ${currentJob.day_rate.met ? 'text-green-500' : 'text-red-500'}`}>
-                            {currentJob.day_rate.met ? '✓' : '✗'} {formatCurrency(currentJob.day_rate.per_day || 0)}/day
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">vs target</span>
-                          <span className={currentJob.day_rate.delta >= 0 ? 'text-green-500' : 'text-red-500'}>
-                            {currentJob.day_rate.delta >= 0 ? '+' : ''}{formatCurrency(currentJob.day_rate.delta)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="grid grid-cols-2 gap-2 mt-[14px]">
+                      {TIER_ORDER.map((t) => {
+                        const sel = (currentJob.day_units?.[t] || 0) > 0;
+                        return (
+                          <div
+                            key={t}
+                            className="text-left p-3 rounded-[11px]"
+                            style={{
+                              background: sel ? 'rgba(255,106,26,0.12)' : '#13110F',
+                              border: `1.5px solid ${sel ? PL_ACCENT : 'rgba(255,255,255,0.08)'}`,
+                            }}
+                          >
+                            <div className="font-bold uppercase" style={{ fontSize: 12, letterSpacing: '0.04em', color: sel ? PL_ACCENT : '#9A9183' }}>
+                              {TIER_LABELS[t]}
+                            </div>
+                            <div className="pl-mono font-semibold mt-[3px]" style={{ fontSize: 20, color: sel ? '#F2EDE4' : '#B6AD9D' }}>
+                              {sel && (currentJob.day_units?.[t] || 0) > 1 ? `×${currentJob.day_units?.[t]}` : (sel ? 'set' : '—')}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="text-pl-faint mt-3" style={{ fontSize: 11 }}>Change the tier in Edit.</div>
                   </div>
                 </div>
 
