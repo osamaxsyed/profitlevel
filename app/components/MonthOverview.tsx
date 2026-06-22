@@ -31,14 +31,25 @@ const TIER_META: { key: 'full' | 'half' | 'short' | 'visit'; label: string }[] =
   { key: 'visit', label: 'Visit' },
 ];
 
+interface MonthlyGoals {
+  months: { month: number; goal: number; actual: number }[];
+  pace_target: number;
+  pace_actual: number;
+  pace_delta: number;
+  annual_target: number;
+  current_month: number;
+}
+
 export default function MonthOverviewCard() {
   const router = useRouter();
   const [overview, setOverview] = useState<MonthOverview | null>(null);
   const [netGoal, setNetGoal] = useState(120);
+  const [goals, setGoals] = useState<MonthlyGoals | null>(null);
 
   useEffect(() => {
     fetchOverview();
     fetchGoals();
+    fetchMonthlyGoals();
   }, []);
 
   const fetchOverview = async () => {
@@ -51,6 +62,11 @@ export default function MonthOverviewCard() {
     const res = await fetch('/api/settings/goals');
     const data = await res.json();
     setNetGoal(parseFloat(data.net_hourly_goal));
+  };
+
+  const fetchMonthlyGoals = async () => {
+    const res = await fetch(`/api/monthly-goals?year=${new Date().getFullYear()}`);
+    if (res.ok) setGoals(await res.json());
   };
 
   if (!overview) return null;
@@ -79,7 +95,7 @@ export default function MonthOverviewCard() {
             ${overview.revenue.toFixed(2)}
           </div>
           <div className="text-xs text-gray-500">
-            {overview.job_count} jobs • {overview.billable_hours.toFixed(1)} hours
+            {overview.job_count} jobs
           </div>
         </div>
 
@@ -95,6 +111,60 @@ export default function MonthOverviewCard() {
             </div>
           )}
         </div>
+
+        {/* Monthly income goal + annual pace */}
+        {goals && (() => {
+          const cm = goals.months.find((m) => m.month === goals.current_month);
+          const monthGoal = cm?.goal || 0;
+          const monthActual = cm?.actual || 0;
+          if (monthGoal === 0 && goals.annual_target === 0) {
+            return (
+              <div className="pt-2 border-t border-light-gray">
+                <button onClick={() => router.push('/goals')} className="text-xs text-safety-orange hover:underline">
+                  🎯 Set your monthly income goals →
+                </button>
+              </div>
+            );
+          }
+          const monthOnGoal = monthActual >= monthGoal;
+          const paceOn = goals.pace_actual >= goals.pace_target;
+          return (
+            <div className="pt-2 border-t border-light-gray">
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-gray-400">This Month vs Goal</div>
+                <button onClick={() => router.push('/goals')} className="text-xs text-safety-orange hover:underline">
+                  Edit goals →
+                </button>
+              </div>
+              {monthGoal > 0 ? (
+                <>
+                  <div className={`text-2xl font-bold ${monthOnGoal ? 'text-green-500' : 'text-red-500'}`}>
+                    ${monthActual.toFixed(0)}<span className="text-gray-500 text-base"> / ${monthGoal.toFixed(0)}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {monthOnGoal ? '+' : ''}${(monthActual - monthGoal).toFixed(0)} {monthOnGoal ? 'over goal' : 'to go'}
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-gray-500">No goal set for this month</div>
+              )}
+              {/* Annual pace */}
+              <div className="mt-2 pt-2 border-t border-light-gray text-xs">
+                <div className="flex justify-between text-gray-400">
+                  <span>On pace for the year</span>
+                  <span className={paceOn ? 'text-green-500' : 'text-red-500'}>
+                    ${goals.pace_actual.toFixed(0)} / ${goals.pace_target.toFixed(0)}
+                    {' '}({paceOn ? '+' : ''}${goals.pace_delta.toFixed(0)})
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>Full-year target</span>
+                  <span>${goals.annual_target.toFixed(0)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Day-Rate Performance */}
         {overview.day_rate && overview.day_rate.jobs_tagged > 0 && (() => {

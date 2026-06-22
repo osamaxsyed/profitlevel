@@ -82,6 +82,19 @@ async function initializeDatabase() {
     );
   `);
 
+  // Per-month gross income goals. One row per (user, year, month) the user has set;
+  // unset months default to $0. Annual target = sum of the year's set months.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS monthly_goals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      year INTEGER NOT NULL,
+      month INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      UNIQUE (user_id, year, month)
+    );
+  `);
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS overhead (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

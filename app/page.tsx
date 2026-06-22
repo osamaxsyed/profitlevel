@@ -685,6 +685,12 @@ export default function Home() {
               <span className="hidden xs:inline">📊 </span>Financials
             </button>
             <button
+              onClick={() => router.push('/goals')}
+              className="text-safety-orange font-semibold text-xs sm:text-sm"
+            >
+              <span className="hidden xs:inline">🎯 </span>Goals
+            </button>
+            <button
               onClick={() => router.push('/settings')}
               className="text-safety-orange font-semibold text-xs sm:text-sm"
             >
