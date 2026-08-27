@@ -1,0 +1,785 @@
+[
+  {
+    "id": 1,
+    "description": "Insurance First and Last",
+    "amount": 141.49,
+    "category": "Admin & Fees",
+    "expense_date": "2025-10-10",
+    "created_at": "2026-02-03 03:15:25",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 2,
+    "description": "Bond",
+    "amount": 100,
+    "category": "Admin & Fees",
+    "expense_date": "2025-10-14",
+    "created_at": "2026-02-03 04:15:20",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 3,
+    "description": "Milwaukee Packout",
+    "amount": 56.48,
+    "category": "Tool",
+    "expense_date": "2025-10-19",
+    "created_at": "2026-02-05 04:11:11",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 4,
+    "description": "Shirts",
+    "amount": 83.63,
+    "category": "Attire",
+    "expense_date": "2025-10-20",
+    "created_at": "2026-02-05 04:11:52",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 5,
+    "description": "GC License Application Fee",
+    "amount": 110,
+    "category": "Admin",
+    "expense_date": "2025-10-22",
+    "created_at": "2026-02-05 04:12:29",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 6,
+    "description": "FB Ads",
+    "amount": 128.6,
+    "category": "Marketing",
+    "expense_date": "2025-11-06",
+    "created_at": "2026-02-05 04:13:40",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 7,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": "Admin & Fees",
+    "expense_date": "2025-11-10",
+    "created_at": "2026-02-05 04:14:24",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 8,
+    "description": "Circular Saw, Jigsaw, Batteries",
+    "amount": 519.26,
+    "category": "Tools",
+    "expense_date": "2025-12-01",
+    "created_at": "2026-02-05 04:15:12",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 9,
+    "description": "Klien Tools - Allen Keys",
+    "amount": 28.53,
+    "category": "Tools",
+    "expense_date": "2025-12-07",
+    "created_at": "2026-02-05 04:16:25",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 10,
+    "description": "Hoodie, Hat",
+    "amount": 19.21,
+    "category": "Attire",
+    "expense_date": "2025-12-08",
+    "created_at": "2026-02-05 04:16:58",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 11,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": "Admin & Fees",
+    "expense_date": "2025-12-10",
+    "created_at": "2026-02-05 04:17:46",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 22,
+    "description": "Adverstising",
+    "amount": 17.39,
+    "category": null,
+    "expense_date": "2025-12-10",
+    "created_at": "2026-02-05 04:27:56",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 12,
+    "description": "Firm Grip Gloves",
+    "amount": 8.4,
+    "category": null,
+    "expense_date": "2025-12-16",
+    "created_at": "2026-02-05 04:18:33",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 13,
+    "description": "Angle Grinder, Brad Nailer, Multitool, Charger",
+    "amount": 1008.67,
+    "category": "Tools",
+    "expense_date": "2025-12-25",
+    "created_at": "2026-02-05 04:19:24",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 34,
+    "description": "Leaf Blower, Drill",
+    "amount": 425.41,
+    "category": "Tools",
+    "expense_date": "2025-12-25",
+    "created_at": "2026-02-05 04:37:20",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 32,
+    "description": "Spade Bit",
+    "amount": 13.73,
+    "category": null,
+    "expense_date": "2025-12-26",
+    "created_at": "2026-02-05 04:35:21",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 33,
+    "description": "Drill Bits, Klien Wrenches",
+    "amount": 19.11,
+    "category": null,
+    "expense_date": "2025-12-26",
+    "created_at": "2026-02-05 04:36:19",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 14,
+    "description": "Stripping Pliers",
+    "amount": 31.96,
+    "category": "Tools",
+    "expense_date": "2025-12-31",
+    "created_at": "2026-02-05 04:20:00",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 15,
+    "description": "Screwdriver Set",
+    "amount": 63.54,
+    "category": "Tools",
+    "expense_date": "2025-12-31",
+    "created_at": "2026-02-05 04:20:25",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 16,
+    "description": "Pants, Rainboots",
+    "amount": 64.95,
+    "category": null,
+    "expense_date": "2025-12-31",
+    "created_at": "2026-02-05 04:20:58",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 17,
+    "description": "Hammer",
+    "amount": 31.97,
+    "category": "Tools",
+    "expense_date": "2025-12-31",
+    "created_at": "2026-02-05 04:21:25",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 18,
+    "description": "Milwuakee A5 gloves",
+    "amount": 14.97,
+    "category": null,
+    "expense_date": "2025-12-31",
+    "created_at": "2026-02-05 04:21:56",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 19,
+    "description": "Ladders",
+    "amount": 126.88,
+    "category": null,
+    "expense_date": "2025-12-31",
+    "created_at": "2026-02-05 04:22:25",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 20,
+    "description": "Klien Tools Knives",
+    "amount": 44.74,
+    "category": "Tools",
+    "expense_date": "2026-01-02",
+    "created_at": "2026-02-05 04:26:39",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 29,
+    "description": "Business Cards",
+    "amount": 18.65,
+    "category": null,
+    "expense_date": "2026-01-09",
+    "created_at": "2026-02-05 04:31:48",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 21,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": null,
+    "expense_date": "2026-01-10",
+    "created_at": "2026-02-05 04:27:16",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 30,
+    "description": "Magnet",
+    "amount": 63.98,
+    "category": "Marketing",
+    "expense_date": "2026-01-11",
+    "created_at": "2026-02-05 04:32:18",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 26,
+    "description": "Advertising",
+    "amount": 39,
+    "category": "Marketing",
+    "expense_date": "2026-01-12",
+    "created_at": "2026-02-05 04:30:14",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 24,
+    "description": "multi tool repurchase",
+    "amount": 212.18,
+    "category": null,
+    "expense_date": "2026-01-15",
+    "created_at": "2026-02-05 04:29:09",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 23,
+    "description": "Multi tool return",
+    "amount": -297.48,
+    "category": null,
+    "expense_date": "2026-01-17",
+    "created_at": "2026-02-05 04:28:17",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 25,
+    "description": "Klien knives return",
+    "amount": -22.37,
+    "category": null,
+    "expense_date": "2026-01-17",
+    "created_at": "2026-02-05 04:29:45",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 28,
+    "description": "Advertising",
+    "amount": 26.06,
+    "category": null,
+    "expense_date": "2026-01-23",
+    "created_at": "2026-02-05 04:31:28",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 35,
+    "description": "Glass Decal",
+    "amount": 52.24,
+    "category": "Marketing",
+    "expense_date": "2026-02-02",
+    "created_at": "2026-02-05 04:57:14",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 36,
+    "description": "Harbor Freight - Drop Cloths",
+    "amount": 35.15,
+    "category": null,
+    "expense_date": "2026-02-04",
+    "created_at": "2026-02-05 04:57:50",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 37,
+    "description": "caulk gun ",
+    "amount": 6.38,
+    "category": "tools",
+    "expense_date": "2026-02-06",
+    "created_at": "2026-02-10 01:40:00",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 41,
+    "description": "wawa w/ eduardo @mana job",
+    "amount": 10.68,
+    "category": "meals",
+    "expense_date": "2026-02-07",
+    "created_at": "2026-02-10 01:49:17",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 42,
+    "description": "lunch w/ eduardo @mana job",
+    "amount": 37.26,
+    "category": "meals",
+    "expense_date": "2026-02-07",
+    "created_at": "2026-02-10 01:51:18",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 38,
+    "description": "milwuakee shop vac",
+    "amount": 165.72,
+    "category": "10.98",
+    "expense_date": "2026-02-08",
+    "created_at": "2026-02-10 01:41:44",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 39,
+    "description": "milwuakee air tip for vac",
+    "amount": 35.48,
+    "category": "tools",
+    "expense_date": "2026-02-08",
+    "created_at": "2026-02-10 01:42:36",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 40,
+    "description": "dunkin w/ haris @mana job",
+    "amount": 7.66,
+    "category": "meals",
+    "expense_date": "2026-02-08",
+    "created_at": "2026-02-10 01:48:24",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 44,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": "Insurance ",
+    "expense_date": "2026-02-10",
+    "created_at": "2026-02-12 00:52:58",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 43,
+    "description": "drop cloth return",
+    "amount": -23.43,
+    "category": null,
+    "expense_date": "2026-02-11",
+    "created_at": "2026-02-11 00:05:48",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 45,
+    "description": "profitlevel domain ",
+    "amount": 13.18,
+    "category": null,
+    "expense_date": "2026-02-11",
+    "created_at": "2026-02-12 01:07:00",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 46,
+    "description": "Hack saw",
+    "amount": 26.62,
+    "category": null,
+    "expense_date": "2026-02-14",
+    "created_at": "2026-02-15 15:28:38",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 47,
+    "description": "Sawzall",
+    "amount": 244.18,
+    "category": "Tools",
+    "expense_date": "2026-03-08",
+    "created_at": "2026-03-09 03:25:45",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 48,
+    "description": "Belt + Paslode",
+    "amount": 552.32,
+    "category": "Tools",
+    "expense_date": "2026-03-08",
+    "created_at": "2026-03-09 03:27:21",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 51,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": null,
+    "expense_date": "2026-03-10",
+    "created_at": "2026-03-15 20:28:27",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 50,
+    "description": "Vise Grips",
+    "amount": 27.7,
+    "category": "Tools",
+    "expense_date": "2026-03-14",
+    "created_at": "2026-03-15 20:20:41",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 49,
+    "description": "Gloves, glasses ",
+    "amount": 15.4,
+    "category": "PPE",
+    "expense_date": "2026-03-15",
+    "created_at": "2026-03-15 20:19:22",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 52,
+    "description": "Bond ",
+    "amount": 250,
+    "category": null,
+    "expense_date": "2026-04-01",
+    "created_at": "2026-04-01 05:33:22",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 53,
+    "description": "Miter Saw and Stand",
+    "amount": 692,
+    "category": null,
+    "expense_date": "2026-04-01",
+    "created_at": "2026-04-01 05:33:42",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 54,
+    "description": "Decked",
+    "amount": 1812.61,
+    "category": null,
+    "expense_date": "2026-04-04",
+    "created_at": "2026-04-05 03:01:57",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 57,
+    "description": "Truewerk Pants",
+    "amount": 319.6,
+    "category": "Clothing",
+    "expense_date": "2026-04-05",
+    "created_at": "2026-04-07 21:16:55",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 58,
+    "description": "Mini Splits Domain",
+    "amount": 11.48,
+    "category": "Marketing",
+    "expense_date": "2026-04-05",
+    "created_at": "2026-04-07 21:17:21",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 55,
+    "description": "Docusign",
+    "amount": 15,
+    "category": "Admin",
+    "expense_date": "2026-04-07",
+    "created_at": "2026-04-07 21:16:02",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 56,
+    "description": "Carhartt Sweat Pants",
+    "amount": 35.99,
+    "category": "Clothing",
+    "expense_date": "2026-04-07",
+    "created_at": "2026-04-07 21:16:30",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 59,
+    "description": "Insurance ",
+    "amount": 75.74,
+    "category": null,
+    "expense_date": "2026-04-10",
+    "created_at": "2026-04-12 15:11:42",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 60,
+    "description": "Home Depot Stripped Screw, Deckd supplies",
+    "amount": 35.31,
+    "category": null,
+    "expense_date": "2026-04-14",
+    "created_at": "2026-04-26 02:25:46",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 61,
+    "description": "Home Depot - wrecking claw, ratchet straps",
+    "amount": 67.7,
+    "category": null,
+    "expense_date": "2026-04-18",
+    "created_at": "2026-04-26 02:27:22",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 62,
+    "description": "Namecheap Domain",
+    "amount": 11.18,
+    "category": null,
+    "expense_date": "2026-04-21",
+    "created_at": "2026-04-26 02:28:01",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 63,
+    "description": "Dunkin - 2 jester",
+    "amount": 12.8,
+    "category": null,
+    "expense_date": "2026-04-25",
+    "created_at": "2026-04-26 02:30:12",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 64,
+    "description": "Zelle - shahs Shawarma",
+    "amount": 20,
+    "category": null,
+    "expense_date": "2026-04-26",
+    "created_at": "2026-04-26 02:30:34",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 65,
+    "description": "DD",
+    "amount": 12.8,
+    "category": null,
+    "expense_date": "2026-05-03",
+    "created_at": "2026-05-05 02:27:58",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 66,
+    "description": "Roses",
+    "amount": 39.44,
+    "category": "Food",
+    "expense_date": "2026-05-03",
+    "created_at": "2026-05-05 02:28:16",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 67,
+    "description": "Quick Chek",
+    "amount": 8.94,
+    "category": "Food",
+    "expense_date": "2026-05-04",
+    "created_at": "2026-05-05 02:28:56",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 68,
+    "description": "Amazon - Air Scrubber",
+    "amount": 298.54,
+    "category": "Tools",
+    "expense_date": "2026-05-05",
+    "created_at": "2026-05-05 02:29:28",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 69,
+    "description": "DD",
+    "amount": 10.76,
+    "category": "Food",
+    "expense_date": "2026-05-09",
+    "created_at": "2026-05-09 22:25:15",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 70,
+    "description": "DD ",
+    "amount": 2.02,
+    "category": "Food",
+    "expense_date": "2026-05-09",
+    "created_at": "2026-05-09 22:25:43",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 71,
+    "description": "Gyro",
+    "amount": 51.05,
+    "category": "Food",
+    "expense_date": "2026-05-09",
+    "created_at": "2026-05-09 22:26:17",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 72,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": null,
+    "expense_date": "2026-05-10",
+    "created_at": "2026-05-12 21:35:47",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 73,
+    "description": "DD",
+    "amount": 5.32,
+    "category": null,
+    "expense_date": "2026-05-10",
+    "created_at": "2026-05-12 21:36:02",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 75,
+    "description": "DD",
+    "amount": 6.4,
+    "category": null,
+    "expense_date": "2026-05-11",
+    "created_at": "2026-05-12 21:38:09",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 76,
+    "description": "Taco Bell",
+    "amount": 11,
+    "category": null,
+    "expense_date": "2026-05-11",
+    "created_at": "2026-05-12 21:38:22",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 74,
+    "description": "DD",
+    "amount": 6.4,
+    "category": null,
+    "expense_date": "2026-05-12",
+    "created_at": "2026-05-12 21:37:58",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 77,
+    "description": "Caulking Gun",
+    "amount": 47.76,
+    "category": "Tools",
+    "expense_date": "2026-05-15",
+    "created_at": "2026-05-16 23:19:55",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 78,
+    "description": "DD",
+    "amount": 8.52,
+    "category": null,
+    "expense_date": "2026-05-16",
+    "created_at": "2026-05-16 23:20:08",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 79,
+    "description": "Tomato Pies",
+    "amount": 29.74,
+    "category": null,
+    "expense_date": "2026-05-16",
+    "created_at": "2026-05-16 23:20:24",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 80,
+    "description": "5/30 PPE: gloves, glasses, FlipToggle anchors",
+    "amount": 31.37,
+    "category": "PPE",
+    "expense_date": "2026-05-30",
+    "created_at": "2026-05-31 02:14:19",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 81,
+    "description": "5/30 Shop stock: EZ Toggle anchors 25pk",
+    "amount": 28.25,
+    "category": "Materials",
+    "expense_date": "2026-05-30",
+    "created_at": "2026-05-31 02:14:19",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 82,
+    "description": "DD",
+    "amount": 6.4,
+    "category": null,
+    "expense_date": "2026-05-30",
+    "created_at": "2026-05-31 12:19:44",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 83,
+    "description": "DD",
+    "amount": 6.4,
+    "category": null,
+    "expense_date": "2026-06-05",
+    "created_at": "2026-06-12 10:20:23",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 84,
+    "description": "DD",
+    "amount": 10.23,
+    "category": null,
+    "expense_date": "2026-06-07",
+    "created_at": "2026-06-12 10:20:48",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 85,
+    "description": "Local Dominator ",
+    "amount": 39,
+    "category": "Marketing ",
+    "expense_date": "2026-06-07",
+    "created_at": "2026-06-12 10:21:10",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 86,
+    "description": "Insurance",
+    "amount": 75.74,
+    "category": "Insurance",
+    "expense_date": "2026-06-10",
+    "created_at": "2026-06-17 21:19:59",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 87,
+    "description": "Klein Tools Cat's Paw (Nail Puller)",
+    "amount": 19.17,
+    "category": "Tools",
+    "expense_date": "2026-06-13",
+    "created_at": "2026-06-17 22:16:25",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 88,
+    "description": "6/20 HD gross: 2 MKE hole saws + fliptoggle + moisture meter",
+    "amount": 155.58,
+    "category": "Materials",
+    "expense_date": "2026-06-20",
+    "created_at": "2026-06-20 20:38:24",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 89,
+    "description": "6/20 Returns: Gen Tools moisture meter + 1 MKE hole saw",
+    "amount": -92.7,
+    "category": "Returns",
+    "expense_date": "2026-06-20",
+    "created_at": "2026-06-20 20:39:02",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  }
+]

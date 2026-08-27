@@ -38,7 +38,7 @@ export async function PATCH(
     const userId = await getUserId();
     const { id } = await params;
     const body = await request.json();
-    const { name, client_name, contract_price, job_date, day_units } = body;
+    const { name, client_name, contract_price, job_date, day_units, paid_via, paid_date } = body;
 
     // day_units may arrive as an object or JSON string; normalize to a string.
     const dayUnitsValue =
@@ -55,9 +55,27 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    // paid_via/paid_date are optional: when the caller omits the key entirely we keep
+    // whatever is already stored, so existing edit forms don't wipe them out.
+    // Passing an explicit null clears the field.
+    const paidViaValue = 'paid_via' in body ? paid_via || null : undefined;
+    const paidDateValue = 'paid_date' in body ? paid_date || null : undefined;
+
+    const sets = ['name = ?', 'client_name = ?', 'contract_price = ?', 'job_date = ?', 'day_units = ?'];
+    const updateArgs: any[] = [name, client_name || null, contract_price, job_date, dayUnitsValue];
+    if (paidViaValue !== undefined) {
+      sets.push('paid_via = ?');
+      updateArgs.push(paidViaValue);
+    }
+    if (paidDateValue !== undefined) {
+      sets.push('paid_date = ?');
+      updateArgs.push(paidDateValue);
+    }
+    updateArgs.push(id);
+
     await db.execute({
-      sql: 'UPDATE jobs SET name = ?, client_name = ?, contract_price = ?, job_date = ?, day_units = ? WHERE id = ?',
-      args: [name, client_name || null, contract_price, job_date, dayUnitsValue, id],
+      sql: `UPDATE jobs SET ${sets.join(', ')} WHERE id = ?`,
+      args: updateArgs,
     });
 
     // If job_date changed, update mileage rates for this job

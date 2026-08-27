@@ -106,6 +106,35 @@ async function initializeDatabase() {
     );
   `);
 
+  // 1099 subcontractors the owner dispatches jobs to. Single-user app, so no user_id.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS subs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL, phone TEXT, w9_on_file INTEGER DEFAULT 0,
+      hic_number TEXT, hic_verified DATE, coi_gl_expiry DATE, wc_status TEXT,
+      notes TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+  `);
+
+  // What was actually paid out to a sub for a job. A job with >= 1 row is "subbed out".
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS sub_payouts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER NOT NULL, sub_id INTEGER NOT NULL, payout REAL NOT NULL,
+      paid_via TEXT, paid_date DATE, notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+      FOREIGN KEY (sub_id) REFERENCES subs(id));
+  `);
+
+  // Money actually collected from the client. Supports deposits / partial payments.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS job_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER NOT NULL, amount REAL NOT NULL, method TEXT,
+      paid_date DATE, note TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE);
+  `);
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

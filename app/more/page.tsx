@@ -6,6 +6,7 @@ import BottomNav from '../components/pl/BottomNav';
 
 // The "More" hub: secondary destinations that aren't daily-driver tabs.
 const ITEMS: { label: string; sub: string; href: string; icon: string }[] = [
+  { label: 'Subs', sub: 'Roster, payouts & 1099s', href: '/subs', icon: '👷' },
   { label: 'Financials', sub: 'Revenue, costs, profit & tax', href: '/financials', icon: '📊' },
   { label: 'Overhead', sub: 'Recurring business expenses', href: '/overhead', icon: '🏢' },
   { label: 'Settings', sub: 'Day-rate targets & mileage rates', href: '/settings', icon: '⚙️' },

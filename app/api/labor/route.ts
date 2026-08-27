@@ -42,7 +42,13 @@ export async function POST(request: Request) {
   try {
     const userId = await getUserId();
     const body = await request.json();
-    const { job_id, helper_name, hours, rate, is_flat_rate } = body;
+    const { job_id, helper_name, hours, rate, is_flat_rate, paid } = body;
+    // The bank feed is the record for anything paid by Zelle/check/card: those rows are
+    // created by matching in the CNJ dashboard. Here you log what you AGREED to pay, or cash.
+    const paidMode = String(paid || 'agreed').toLowerCase();
+    if (!['agreed', 'cash'].includes(paidMode)) {
+      return NextResponse.json({ error: 'Log helper pay as "agreed" or "cash". Zelle, check, and card payouts are matched from the bank feed in the CNJ dashboard, not typed here.' }, { status: 400 });
+    }
 
     if (!job_id || !helper_name || rate === undefined) {
       return NextResponse.json(
@@ -62,8 +68,8 @@ export async function POST(request: Request) {
     }
 
     const result = await db.execute({
-      sql: 'INSERT INTO labor (job_id, helper_name, hours, rate, is_flat_rate) VALUES (?, ?, ?, ?, ?)',
-      args: [job_id, helper_name, hours || 0, rate, is_flat_rate ? 1 : 0]
+      sql: 'INSERT INTO labor (job_id, helper_name, hours, rate, is_flat_rate, status, source) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [job_id, helper_name, hours || 0, rate, is_flat_rate ? 1 : 0, paidMode === 'cash' ? 'paid' : 'agreed', paidMode === 'cash' ? 'cash' : null]
     });
 
     const laborResult = await db.execute({

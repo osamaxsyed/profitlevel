@@ -66,6 +66,65 @@ export async function GET(request: Request) {
 
     const mileageTotal = mileageTotalResult.rows[0] as unknown as { total: number };
 
+    // Get monthly sub payouts - the cost of dispatching work to 1099 subs.
+    // Without this, profit is overstated on every subbed-out job.
+    const subPayoutTotalResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(sp.payout), 0) as total
+      FROM sub_payouts sp
+      INNER JOIN jobs j ON sp.job_id = j.id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      args: [userId, month]
+    });
+
+    const subPayoutTotal = subPayoutTotalResult.rows[0] as unknown as { total: number };
+
+    // Receivables: what has been billed but not yet collected.
+    // Legacy jobs predate job_payments, so a paid_via with no payment rows means paid in full.
+    const outstandingResult = await db.execute({
+      sql: `SELECT
+        COALESCE(SUM(MAX(j.contract_price - CASE
+          WHEN pay.total IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price
+          ELSE COALESCE(pay.total, 0)
+        END, 0)), 0) as total_outstanding,
+        COALESCE(SUM(CASE
+          WHEN pay.total IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price
+          ELSE COALESCE(pay.total, 0)
+        END), 0) as total_collected
+      FROM jobs j
+      LEFT JOIN (
+        SELECT job_id, SUM(amount) as total FROM job_payments GROUP BY job_id
+      ) pay ON j.id = pay.job_id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      args: [userId, month]
+    });
+
+    const outstandingStats = outstandingResult.rows[0] as unknown as {
+      total_outstanding: number;
+      total_collected: number;
+    };
+
+    // Owner-labor slice: jobs the owner worked himself (no sub payouts attached).
+    // Day-rate metrics only make sense over these.
+    const ownerJobsResult = await db.execute({
+      sql: `SELECT
+        COALESCE(SUM(j.contract_price), 0) as revenue,
+        COUNT(j.id) as job_count,
+        COALESCE(SUM(COALESCE(hl.total_hours, j.hours_spent, 0)), 0) as billable_hours
+      FROM jobs j
+      LEFT JOIN (
+        SELECT job_id, SUM(hours) as total_hours FROM hours_log GROUP BY job_id
+      ) hl ON j.id = hl.job_id
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?
+        AND NOT EXISTS (SELECT 1 FROM sub_payouts sp WHERE sp.job_id = j.id)`,
+      args: [userId, month]
+    });
+
+    const ownerJobs = ownerJobsResult.rows[0] as unknown as {
+      revenue: number;
+      job_count: number;
+      billable_hours: number;
+    };
+
     // Get monthly overhead
     const overheadResultQuery = await db.execute({
       sql: `SELECT COALESCE(SUM(amount), 0) as total
@@ -77,7 +136,8 @@ export async function GET(request: Request) {
     const overheadResult = overheadResultQuery.rows[0] as unknown as { total: number };
 
     // Calculate totals
-    const totalExpenses = materialsTotal.total + laborTotal.total + mileageTotal.total + overheadResult.total;
+    const totalExpenses =
+      materialsTotal.total + laborTotal.total + mileageTotal.total + subPayoutTotal.total + overheadResult.total;
     const netProfit = jobStats.total_revenue - totalExpenses;
     const netHourlyRate = jobStats.total_billable_hours > 0 ? netProfit / jobStats.total_billable_hours : 0;
 
@@ -95,6 +155,7 @@ export async function GET(request: Request) {
             - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
             - COALESCE((SELECT SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END) FROM labor WHERE job_id = j.id), 0)
             - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(payout) FROM sub_payouts WHERE job_id = j.id), 0)
           AS gross_profit
         FROM jobs j
         WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?
@@ -137,6 +198,14 @@ export async function GET(request: Request) {
       billable_hours: jobStats.total_billable_hours,
       job_count: jobStats.job_count,
       overhead: overheadResult.total,
+      total_sub_payouts: subPayoutTotal.total,
+      total_outstanding: outstandingStats.total_outstanding,
+      total_collected: outstandingStats.total_collected,
+      owner_jobs: {
+        revenue: ownerJobs.revenue,
+        job_count: ownerJobs.job_count,
+        billable_hours: ownerJobs.billable_hours,
+      },
       day_rate: {
         targets,
         tier_counts: tierCounts,

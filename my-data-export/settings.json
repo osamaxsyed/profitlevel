@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "key": "gross_hourly_goal",
+    "value": "195",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 2,
+    "key": "net_hourly_goal",
+    "value": "120",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  },
+  {
+    "id": 3,
+    "key": "yearly_goal_hours",
+    "value": "2000",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "exported_at": "2026-05-18T04:17:02.751Z",
+  "counts": {
+    "users": 3,
+    "organizations": 0,
+    "invitations": 0,
+    "sessions": 0,
+    "jwt_templates": 0,
+    "domains": 1,
+    "redirect_urls": 0,
+    "saml_connections": 0,
+    "oauth_applications": 0
+  }
+}

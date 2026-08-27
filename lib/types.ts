@@ -6,6 +6,68 @@ export interface Job {
   job_date: string;
   hours_spent: number | null;
   created_at: string;
+  paid_via?: string | null;
+  paid_date?: string | null;
+}
+
+/** A 1099 subcontractor the owner dispatches work to. */
+export interface Sub {
+  id: number;
+  name: string;
+  phone: string | null;
+  w9_on_file: number;
+  hic_number: string | null;
+  hic_verified: string | null;
+  coi_gl_expiry: string | null;
+  wc_status: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+/** Compliance/volume rollups added by GET /api/subs. */
+export interface SubWithTotals extends Sub {
+  ytd_paid: number;
+  jobs_count: number;
+}
+
+/** A payment made to a sub for a job. */
+export interface SubPayout {
+  id: number;
+  job_id: number;
+  sub_id: number;
+  payout: number;
+  paid_via: string | null;
+  paid_date: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+/** A sub payout joined with the sub's name, as returned on a job. */
+export interface SubPayoutWithName extends SubPayout {
+  sub_name: string;
+}
+
+/** Money collected from the client for a job. */
+export interface JobPayment {
+  id: number;
+  job_id: number;
+  amount: number;
+  method: string | null;
+  paid_date: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export type PaidStatus = 'paid' | 'partial' | 'unpaid';
+
+/** A payee (helper or sub) rolled up per year for 1099-NEC tracking. */
+export interface Payee1099 {
+  name: string;
+  year: string;
+  total_paid: number;
+  payments: number;
+  needs_1099: boolean;
+  source: 'labor' | 'subs' | 'both';
 }
 
 export interface Material {
@@ -53,6 +115,17 @@ export interface JobWithCosts extends Job {
   hours_logged: number;
   day_units?: import('./dayRate').DayUnits | null;
   day_rate?: import('./dayRate').DayRateResult;
+  /** SUM of sub_payouts.payout for this job. */
+  sub_payout_total: number;
+  sub_payouts: SubPayoutWithName[];
+  /** SUM of job_payments.amount, or contract_price for legacy paid_via-only jobs. */
+  amount_paid: number;
+  /** contract_price - amount_paid, floored at 0. */
+  outstanding: number;
+  /** amount_paid - materials - labor - sub payouts (mileage excluded: non-cash). */
+  cash_position: number;
+  is_subbed: boolean;
+  paid_status: PaidStatus;
 }
 
 export interface IRSRate {

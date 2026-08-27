@@ -9,7 +9,15 @@ import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib
 import AddExpenseModal from './components/AddExpenseModal';
 import JobStampCard from './components/pl/JobStampCard';
 import BottomNav from './components/pl/BottomNav';
+import BusinessBand from './components/pl/BusinessBand';
+import JobPaymentsSection from './components/pl/JobPaymentsSection';
+import SubPayoutsSection from './components/pl/SubPayoutsSection';
+import { num, type JobDispatchFields, type JobPayment } from './components/pl/subTypes';
 import { tierSummary, resultTokens, TIER_LABELS, TIER_ORDER, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
+
+// Jobs carry the dispatch/receivables fields added in the Aug 2026 rehaul.
+// They're optional here so the page still renders against an older API.
+type DispatchJob = JobWithCosts & Partial<JobDispatchFields>;
 
 const DAY_TIER_OPTIONS = [
   { value: 'full', label: 'Full day' },
@@ -65,7 +73,7 @@ export default function Home() {
       setTab('jobs');
     }
   }, []);
-  const [jobs, setJobs] = useState<JobWithCosts[]>([]);
+  const [jobs, setJobs] = useState<DispatchJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddMaterial, setShowAddMaterial] = useState(false);
@@ -77,6 +85,7 @@ export default function Home() {
   const [labor, setLabor] = useState<Labor[]>([]);
   const [mileage, setMileage] = useState<Mileage[]>([]);
   const [hoursLog, setHoursLog] = useState<HoursLog[]>([]);
+  const [jobPayments, setJobPayments] = useState<JobPayment[]>([]);
 
   const [grossGoal, setGrossGoal] = useState(195);
   const [netGoal, setNetGoal] = useState(120);
@@ -217,16 +226,23 @@ export default function Home() {
   };
 
   const fetchJobDetails = async (jobId: number) => {
-    const [materialsRes, laborRes, mileageRes, hoursLogRes] = await Promise.all([
+    const [materialsRes, laborRes, mileageRes, hoursLogRes, paymentsRes] = await Promise.all([
       fetch(`/api/materials?job_id=${jobId}`),
       fetch(`/api/labor?job_id=${jobId}`),
       fetch(`/api/mileage?job_id=${jobId}`),
       fetch(`/api/hours-log?job_id=${jobId}`),
+      fetch(`/api/job-payments?job_id=${jobId}`).catch(() => null),
     ]);
     setMaterials(await materialsRes.json());
     setLabor(await laborRes.json());
     setMileage(await mileageRes.json());
     setHoursLog(await hoursLogRes.json());
+    if (paymentsRes && paymentsRes.ok) {
+      const pay = await paymentsRes.json();
+      setJobPayments(Array.isArray(pay) ? pay : []);
+    } else {
+      setJobPayments([]);
+    }
     fetchExistingHelpers();
   };
 
@@ -268,7 +284,7 @@ export default function Home() {
     }
 
     // Optimistic update - add temporary job immediately
-    const tempJob: JobWithCosts = {
+    const tempJob: DispatchJob = {
       id: Date.now(), // Temporary ID
       name: newJob.name,
       client_name: newJob.client_name || null,
@@ -282,6 +298,13 @@ export default function Home() {
       mileage_total: 0,
       gross_profit: parseFloat(newJob.contract_price),
       gross_hourly_rate: null,
+      sub_payout_total: 0,
+      sub_payouts: [],
+      amount_paid: 0,
+      outstanding: parseFloat(newJob.contract_price),
+      cash_position: 0,
+      is_subbed: false,
+      paid_status: 'unpaid',
     };
     setJobs([tempJob, ...jobs]);
     const dayUnits = buildDayUnits(newJob.day_tier, newJob.day_count);
@@ -395,6 +418,7 @@ export default function Home() {
         hours: newLabor.is_flat_rate ? 0 : parseFloat(newLabor.hours),
         rate: parseFloat(newLabor.rate),
         is_flat_rate: newLabor.is_flat_rate,
+        paid: 'agreed',
       }),
     });
     setNewLabor({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
@@ -677,6 +701,8 @@ export default function Home() {
   // Month label for the dashboard header
   const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const clearedCount = jobs.filter((j) => j.day_rate?.met).length;
+  const subbedCount = jobs.filter((j) => j.is_subbed).length;
+  const unpaidCount = jobs.filter((j) => j.paid_status && j.paid_status !== 'paid').length;
 
   return (
     <div className="min-h-screen bg-pl-bg max-w-md mx-auto" style={{ paddingBottom: selectedJob ? 24 : 96 }}>
@@ -699,9 +725,11 @@ export default function Home() {
             <div className="pt-2 pb-4">
               <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>{monthLabel}</div>
               <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>
-                {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} · {clearedCount} cleared their tier
+                {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} · {subbedCount} subbed out
               </div>
             </div>
+
+            <BusinessBand />
 
             <MonthOverviewCard />
 
@@ -737,7 +765,9 @@ export default function Home() {
               <div>
                 <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>Jobs</div>
                 <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>
-                  {clearedCount} of {jobs.length} cleared their tier
+                  {unpaidCount > 0
+                    ? `${unpaidCount} awaiting payment · ${subbedCount} subbed out`
+                    : `${clearedCount} of ${jobs.length} cleared their tier`}
                 </div>
               </div>
               <button
@@ -1018,6 +1048,9 @@ export default function Home() {
                         { label: 'Revenue', val: formatCurrency(currentJob.contract_price), color: '#F2EDE4', neg: false },
                         { label: 'Materials', val: formatCurrency(currentJob.materials_total), color: PL_CLAY, neg: true },
                         { label: 'Labor / helper', val: formatCurrency(currentJob.labor_total), color: PL_CLAY, neg: true },
+                        ...(num(currentJob.sub_payout_total) > 0
+                          ? [{ label: 'Sub payouts', val: formatCurrency(num(currentJob.sub_payout_total)), color: PL_CLAY, neg: true }]
+                          : []),
                         { label: 'Mileage', val: formatCurrency(currentJob.mileage_total), color: PL_CLAY, neg: true },
                       ].map((row) => (
                         <div key={row.label} className="flex justify-between py-3" style={{ borderBottom: '1px dashed rgba(255,255,255,0.08)' }}>
@@ -1052,8 +1085,55 @@ export default function Home() {
                         </div>
                       );
                     })()}
+                    {/* Cash position — real money in pocket while payment is pending */}
+                    {currentJob.paid_status && currentJob.paid_status !== 'paid' && (
+                      <div
+                        className="mt-2 p-[14px] rounded-[11px]"
+                        style={{
+                          background: num(currentJob.cash_position) < 0 ? 'rgba(224,118,78,0.1)' : 'rgba(255,106,26,0.1)',
+                          border: `1px solid ${num(currentJob.cash_position) < 0 ? 'rgba(224,118,78,0.32)' : 'rgba(255,106,26,0.26)'}`,
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold" style={{ fontSize: 14, color: num(currentJob.cash_position) < 0 ? PL_CLAY : PL_ACCENT }}>
+                            Cash position
+                          </span>
+                          <span className="pl-mono font-semibold" style={{ fontSize: 17, color: num(currentJob.cash_position) < 0 ? PL_CLAY : PL_ACCENT }}>
+                            {num(currentJob.cash_position) < 0 ? '−' : '+'}{formatCurrency(Math.abs(num(currentJob.cash_position)))}
+                          </span>
+                        </div>
+                        <div className="text-pl-muted mt-[5px]" style={{ fontSize: 12 }}>
+                          {formatCurrency(num(currentJob.amount_paid))} collected against {formatCurrency(currentJob.contract_price)} — {formatCurrency(num(currentJob.outstanding))} still owed.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Payments in — what the client has actually paid */}
+                <JobPaymentsSection
+                  jobId={currentJob.id}
+                  contractPrice={currentJob.contract_price}
+                  payments={jobPayments}
+                  amountPaid={num(currentJob.amount_paid)}
+                  outstanding={num(currentJob.outstanding)}
+                  paidStatus={currentJob.paid_status}
+                  onChange={() => {
+                    fetchJobs();
+                    fetchJobDetails(currentJob.id);
+                  }}
+                />
+
+                {/* Payouts out — what the subs were paid on this job */}
+                <SubPayoutsSection
+                  jobId={currentJob.id}
+                  payouts={currentJob.sub_payouts ?? []}
+                  total={num(currentJob.sub_payout_total)}
+                  onChange={() => {
+                    fetchJobs();
+                    fetchJobDetails(currentJob.id);
+                  }}
+                />
 
                 {/* Materials Section */}
                 <div className="mb-6">

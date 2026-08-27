@@ -23,6 +23,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
 
   // Labor fields
   const [helperName, setHelperName] = useState('');
+  const [paidCash, setPaidCash] = useState(false);
   const [hours, setHours] = useState('');
   const [rate, setRate] = useState('');
 
@@ -107,6 +108,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
               helper_name: helperName,
               hours: parseFloat(hours),
               rate: parseFloat(rate),
+              paid: paidCash ? 'cash' : 'agreed',
             }),
           });
         } else if (expenseType === 'mileage') {
@@ -278,6 +280,10 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
                 onChange={(e) => setRate(e.target.value)}
                 className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
                 required
+              />
+              <label className="flex items-center gap-2 text-white text-sm mb-2">
+                <input type="checkbox" checked={paidCash} onChange={(e) => setPaidCash(e.target.checked)} />
+                Paid in cash (otherwise this is the agreed amount; Zelle gets matched from the bank feed)
               />
             </>
           )}

@@ -28,6 +28,10 @@ interface FinancialSummary {
   };
   net_profit: number;
   job_count: number;
+  /* Added in the Aug 2026 dispatch rehaul */
+  total_sub_payouts?: number;
+  total_outstanding?: number;
+  owner_jobs?: { revenue: number; count: number };
   day_rate?: DayRate;
   tax_estimate: {
     taxable_income: number;
@@ -133,15 +137,32 @@ export default function FinancialsPage() {
               <div className="text-pl-muted-2" style={{ fontSize: 12 }}>{summary.revenue > 0 ? `${((summary.net_profit / summary.revenue) * 100).toFixed(1)}% margin` : '—'}</div>
             </div>
 
-            {summary.day_rate && summary.day_rate.jobs_tagged > 0 && (
+            {(summary.total_outstanding ?? 0) > 0 && (
               <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Avg per day</div>
-                <div className="pl-mono font-semibold" style={{ fontSize: 24, color: summary.day_rate.actual_total >= summary.day_rate.target_total ? PL_ACCENT : PL_CLAY }}>
-                  {summary.day_rate.avg_per_day != null ? fmtMoney(summary.day_rate.avg_per_day) : '—'}<span className="text-pl-muted-2" style={{ fontSize: 14 }}>/day</span>
-                </div>
-                <div className="text-pl-muted-2" style={{ fontSize: 12 }}>{summary.day_rate.jobs_met}/{summary.day_rate.jobs_tagged} jobs cleared · {summary.day_rate.total_day_units} day-units</div>
+                <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Outstanding</div>
+                <div className="pl-mono font-semibold" style={{ fontSize: 24, color: '#E8B530' }}>{fmtMoney(summary.total_outstanding ?? 0)}</div>
+                <div className="text-pl-muted-2" style={{ fontSize: 12 }}>earned but not yet collected</div>
               </div>
             )}
+
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="font-bold uppercase text-pl-muted-2" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Jobs you worked</div>
+              {summary.day_rate && summary.day_rate.jobs_tagged > 0 ? (
+                <>
+                  <div className="pl-mono font-semibold" style={{ fontSize: 24, color: summary.day_rate.actual_total >= summary.day_rate.target_total ? PL_ACCENT : PL_CLAY }}>
+                    {summary.day_rate.avg_per_day != null ? fmtMoney(summary.day_rate.avg_per_day) : '—'}<span className="text-pl-muted-2" style={{ fontSize: 14 }}>/day</span>
+                  </div>
+                  <div className="text-pl-muted-2" style={{ fontSize: 12 }}>
+                    {summary.day_rate.jobs_met}/{summary.day_rate.jobs_tagged} cleared · {summary.day_rate.total_day_units} day-units
+                    {summary.owner_jobs ? ` · ${fmtMoney(summary.owner_jobs.revenue)} revenue` : ''}
+                  </div>
+                </>
+              ) : (
+                <div className="text-pl-muted mt-1" style={{ fontSize: 13 }}>
+                  Nothing you worked yourself this period — everything went out to subs.
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Expense buckets */}
@@ -150,6 +171,9 @@ export default function FinancialsPage() {
             <div className="flex flex-col gap-2 pl-mono">
               {[
                 { label: 'Materials & labor', val: summary.expenses.bucket_a_direct, note: `Materials ${fmtMoney(summary.expenses.materials)} · Labor ${fmtMoney(summary.expenses.labor)}` },
+                ...((summary.total_sub_payouts ?? 0) > 0
+                  ? [{ label: 'Sub payouts', val: summary.total_sub_payouts ?? 0, note: '1099 crews you dispatched' }]
+                  : []),
                 { label: 'Mileage', val: summary.expenses.bucket_b_variable, note: 'Variable — IRS standard rate' },
                 { label: 'Overhead', val: summary.expenses.bucket_c_fixed, note: 'Fixed — insurance, software, tools' },
               ].map((b) => (

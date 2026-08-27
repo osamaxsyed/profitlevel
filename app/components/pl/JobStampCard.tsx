@@ -2,13 +2,19 @@
 
 import type { JobWithCosts } from '@/lib/types';
 import { fmtMoney, tierSummary, resultTokens } from '@/lib/dayRate';
+import PaidChip from './PaidChip';
+import { num, subLine, type JobDispatchFields, type PaidStatus } from './subTypes';
 
 // Job "stamp" card: left accent stripe colored by result, tier chip + date,
 // name (+ optional sub), gross profit, and a ✓/✗ cleared/under stamp.
+// Since the Aug 2026 dispatch rehaul it also carries a paid-status chip, the
+// sub payout line, and — while a job is only part-paid — its cash position.
 // Used on the dashboard (recent) and jobs list.
 
+type DispatchJob = JobWithCosts & Partial<JobDispatchFields>;
+
 interface JobStampCardProps {
-  job: JobWithCosts;
+  job: DispatchJob;
   onOpen?: () => void;
   showSub?: boolean;
 }
@@ -27,6 +33,12 @@ export default function JobStampCard({ job, onOpen, showSub = false }: JobStampC
     const sign = met ? '+' : '−';
     stamp = `${met ? '✓' : '✗'} ${sign}${fmtMoney(Math.abs(dr.delta))}`;
   }
+
+  const paidStatus = job.paid_status as PaidStatus | undefined;
+  const subs = subLine(job.sub_payouts);
+  const cash = num(job.cash_position);
+  const showCash = paidStatus === 'partial' || (paidStatus === 'unpaid' && num(job.outstanding) > 0);
+  const cashNeg = cash < 0;
 
   return (
     <div
@@ -49,11 +61,17 @@ export default function JobStampCard({ job, onOpen, showSub = false }: JobStampC
         >
           {tierText}{targetText}
         </span>
-        <span className="pl-mono text-pl-muted-2" style={{ fontSize: 12 }}>{job.job_date}</span>
+        <div className="flex items-center gap-[6px]">
+          {paidStatus && <PaidChip status={paidStatus} />}
+          <span className="pl-mono text-pl-muted-2" style={{ fontSize: 12 }}>{job.job_date}</span>
+        </div>
       </div>
       <div className="font-bold mt-[11px] leading-tight" style={{ fontSize: 15 }}>{job.name}</div>
       {showSub && job.client_name && (
         <div className="text-pl-muted-2 mt-[1px]" style={{ fontSize: 12 }}>{job.client_name}</div>
+      )}
+      {subs && (
+        <div className="text-pl-muted mt-[3px] pl-mono" style={{ fontSize: 11.5 }}>{subs}</div>
       )}
       <div className="h-px my-[12px]" style={{ background: 'rgba(255,255,255,0.07)' }} />
       <div className="flex items-end justify-between">
@@ -72,6 +90,22 @@ export default function JobStampCard({ job, onOpen, showSub = false }: JobStampC
           </span>
         )}
       </div>
+      {showCash && (
+        <div
+          className="mt-[10px] rounded-[8px] px-[10px] py-[7px] flex items-center justify-between"
+          style={{
+            background: cashNeg ? 'rgba(224,118,78,0.1)' : 'rgba(255,106,26,0.1)',
+            border: `1px solid ${cashNeg ? 'rgba(224,118,78,0.28)' : 'rgba(255,106,26,0.26)'}`,
+          }}
+        >
+          <span className="pl-mono font-semibold" style={{ fontSize: 12.5, color: cashNeg ? '#E0764E' : '#FF6A1A' }}>
+            {cashNeg ? '−' : '+'}{fmtMoney(Math.abs(cash))}
+          </span>
+          <span className="text-pl-muted" style={{ fontSize: 11 }}>
+            in pocket until final payment
+          </span>
+        </div>
+      )}
     </div>
   );
 }

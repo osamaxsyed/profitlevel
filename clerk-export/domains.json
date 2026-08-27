@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "object": "domain",
+      "id": "dmn_39VB4CQwqQthZX1BgoVgBQAU66K",
+      "name": "profitlevel.app",
+      "is_satellite": false,
+      "is_provider_domain": false,
+      "frontend_api_url": "https://clerk.profitlevel.app",
+      "accounts_portal_url": "https://accounts.profitlevel.app",
+      "development_origin": "",
+      "cname_targets": [
+        {
+          "host": "clerk.profitlevel.app",
+          "value": "frontend-api.clerk.services",
+          "required": true
+        },
+        {
+          "host": "accounts.profitlevel.app",
+          "value": "accounts.clerk.services",
+          "required": true
+        },
+        {
+          "host": "clkmail.profitlevel.app",
+          "value": "mail.jb530p6nv23x.clerk.services",
+          "required": true
+        },
+        {
+          "host": "clk._domainkey.profitlevel.app",
+          "value": "dkim1.jb530p6nv23x.clerk.services",
+          "required": true
+        },
+        {
+          "host": "clk2._domainkey.profitlevel.app",
+          "value": "dkim2.jb530p6nv23x.clerk.services",
+          "required": true
+        }
+      ],
+      "created_at": "2026-02-11T00:52:43Z",
+      "updated_at": "2026-05-14T02:04:17Z"
+    }
+  ],
+  "total_count": 1
+}

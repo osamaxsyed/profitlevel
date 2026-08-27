@@ -1,0 +1,1714 @@
+[
+  {
+    "id": 1,
+    "name": "Drywall Job",
+    "contract_price": 479.81,
+    "job_date": "2025-10-19",
+    "hours_spent": 5,
+    "client_name": "Mana",
+    "created_at": "2026-02-03 01:34:52",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 1,
+        "job_id": 1,
+        "item_name": "Total Material Costs",
+        "cost": 106.39,
+        "tax": 0,
+        "created_at": "2026-02-03 01:37:39"
+      }
+    ],
+    "labor": [
+      {
+        "id": 1,
+        "job_id": 1,
+        "helper_name": "Haris",
+        "hours": 4,
+        "rate": 30,
+        "is_flat_rate": 0,
+        "created_at": "2026-02-03 01:35:17"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 3,
+        "job_id": 1,
+        "miles": 34,
+        "rate": 0.7,
+        "created_at": "2026-02-03 01:49:17"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 1,
+        "job_id": 1,
+        "log_date": "2025-10-19",
+        "hours": 5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:22"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Drywall Job",
+    "contract_price": 1400,
+    "job_date": "2025-11-01",
+    "hours_spent": 15.5,
+    "client_name": "3 Dogwood",
+    "created_at": "2026-02-03 03:37:42",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 2,
+        "job_id": 2,
+        "item_name": "Total Material",
+        "cost": 303.42,
+        "tax": 0,
+        "created_at": "2026-02-03 03:38:03"
+      }
+    ],
+    "labor": [
+      {
+        "id": 2,
+        "job_id": 2,
+        "helper_name": "Muhammad Ashar",
+        "hours": 9.5,
+        "rate": 30,
+        "is_flat_rate": 0,
+        "created_at": "2026-02-03 03:38:37"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 4,
+        "job_id": 2,
+        "miles": 12,
+        "rate": 0.7,
+        "created_at": "2026-02-03 03:38:47"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 2,
+        "job_id": 2,
+        "log_date": "2025-11-01",
+        "hours": 15.5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Pantry Shelves",
+    "contract_price": 200,
+    "job_date": "2025-10-31",
+    "hours_spent": 4,
+    "client_name": "10 Vizcaya",
+    "created_at": "2026-02-03 03:43:02",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 5,
+        "job_id": 3,
+        "miles": 34,
+        "rate": 0.7,
+        "created_at": "2026-02-03 03:43:23"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 3,
+        "job_id": 3,
+        "log_date": "2025-10-31",
+        "hours": 4,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Vanity",
+    "contract_price": 1650,
+    "job_date": "2026-01-04",
+    "hours_spent": 7.5,
+    "client_name": "3 Dogwood",
+    "created_at": "2026-02-03 03:45:08",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 3,
+        "job_id": 4,
+        "item_name": "Vanity",
+        "cost": 450.18,
+        "tax": 0,
+        "created_at": "2026-02-03 03:45:27"
+      },
+      {
+        "id": 4,
+        "job_id": 4,
+        "item_name": "Faucet",
+        "cost": 92,
+        "tax": 0,
+        "created_at": "2026-02-03 03:45:44"
+      },
+      {
+        "id": 5,
+        "job_id": 4,
+        "item_name": "Lag Screws",
+        "cost": 1.24,
+        "tax": 0,
+        "created_at": "2026-02-03 03:45:53"
+      },
+      {
+        "id": 6,
+        "job_id": 4,
+        "item_name": "Towel Rod",
+        "cost": 30.98,
+        "tax": 0,
+        "created_at": "2026-02-03 03:46:02"
+      },
+      {
+        "id": 7,
+        "job_id": 4,
+        "item_name": "Toggle Bolts",
+        "cost": 7.26,
+        "tax": 0,
+        "created_at": "2026-02-03 03:46:17"
+      },
+      {
+        "id": 8,
+        "job_id": 4,
+        "item_name": "Caulk Applicator",
+        "cost": 7.48,
+        "tax": 0,
+        "created_at": "2026-02-03 03:46:32"
+      },
+      {
+        "id": 9,
+        "job_id": 4,
+        "item_name": "Silicone",
+        "cost": 10.98,
+        "tax": 0,
+        "created_at": "2026-02-03 03:46:48"
+      },
+      {
+        "id": 10,
+        "job_id": 4,
+        "item_name": "Handheld Bidet",
+        "cost": 59.18,
+        "tax": 0,
+        "created_at": "2026-02-03 03:46:59"
+      },
+      {
+        "id": 11,
+        "job_id": 4,
+        "item_name": "Mirror",
+        "cost": 57.98,
+        "tax": 0,
+        "created_at": "2026-02-03 03:47:24"
+      },
+      {
+        "id": 12,
+        "job_id": 4,
+        "item_name": "P Trap",
+        "cost": 17.28,
+        "tax": 0,
+        "created_at": "2026-02-03 03:47:49"
+      },
+      {
+        "id": 13,
+        "job_id": 4,
+        "item_name": "PVC",
+        "cost": 13.68,
+        "tax": 0,
+        "created_at": "2026-02-03 03:48:00"
+      },
+      {
+        "id": 14,
+        "job_id": 4,
+        "item_name": "Consumables",
+        "cost": 26.96,
+        "tax": 0,
+        "created_at": "2026-02-03 03:48:09"
+      },
+      {
+        "id": 15,
+        "job_id": 4,
+        "item_name": "Brackets",
+        "cost": 11.96,
+        "tax": 0,
+        "created_at": "2026-02-03 03:48:20"
+      },
+      {
+        "id": 16,
+        "job_id": 4,
+        "item_name": "Tax",
+        "cost": 52.14,
+        "tax": 0,
+        "created_at": "2026-02-03 03:52:04"
+      }
+    ],
+    "labor": [
+      {
+        "id": 3,
+        "job_id": 4,
+        "helper_name": "Muhammad Ashar",
+        "hours": 4.5,
+        "rate": 30,
+        "is_flat_rate": 0,
+        "created_at": "2026-02-03 03:54:26"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 6,
+        "job_id": 4,
+        "miles": 50,
+        "rate": 0.725,
+        "created_at": "2026-02-03 03:55:41"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 4,
+        "job_id": 4,
+        "log_date": "2026-01-04",
+        "hours": 7.5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Door Repair",
+    "contract_price": 120,
+    "job_date": "2026-01-29",
+    "hours_spent": 1,
+    "client_name": "3 Dogwood",
+    "created_at": "2026-02-03 03:58:43",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 7,
+        "job_id": 5,
+        "miles": 6,
+        "rate": 0.725,
+        "created_at": "2026-02-03 03:58:54"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 5,
+        "job_id": 5,
+        "log_date": "2026-01-29",
+        "hours": 1,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Doors, Hanging, Furniture",
+    "contract_price": 2560.18,
+    "job_date": "2026-02-07",
+    "hours_spent": 16.5,
+    "client_name": "Mana",
+    "created_at": "2026-02-03 04:02:15",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 17,
+        "job_id": 6,
+        "item_name": "2x Solid Core Doors",
+        "cost": 338,
+        "tax": 22.39,
+        "created_at": "2026-02-03 04:03:26"
+      },
+      {
+        "id": 18,
+        "job_id": 6,
+        "item_name": "Door Handles",
+        "cost": 58.96,
+        "tax": 3.91,
+        "created_at": "2026-02-03 04:04:01"
+      },
+      {
+        "id": 19,
+        "job_id": 6,
+        "item_name": "Paint",
+        "cost": 53.26,
+        "tax": 0,
+        "created_at": "2026-02-03 04:04:34"
+      },
+      {
+        "id": 21,
+        "job_id": 6,
+        "item_name": "paint brush",
+        "cost": 3.48,
+        "tax": 0.23,
+        "created_at": "2026-02-09 04:02:24"
+      },
+      {
+        "id": 22,
+        "job_id": 6,
+        "item_name": "shim",
+        "cost": 1.58,
+        "tax": 0.1,
+        "created_at": "2026-02-09 04:06:46"
+      },
+      {
+        "id": 23,
+        "job_id": 6,
+        "item_name": "ez hang",
+        "cost": 11.96,
+        "tax": 0.79,
+        "created_at": "2026-02-09 04:07:46"
+      }
+    ],
+    "labor": [
+      {
+        "id": 4,
+        "job_id": 6,
+        "helper_name": "Eduardo",
+        "hours": 0,
+        "rate": 325,
+        "is_flat_rate": 1,
+        "created_at": "2026-02-05 01:00:27"
+      },
+      {
+        "id": 5,
+        "job_id": 6,
+        "helper_name": "Haris",
+        "hours": 5.5,
+        "rate": 30,
+        "is_flat_rate": 0,
+        "created_at": "2026-02-09 04:18:39"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 8,
+        "job_id": 6,
+        "miles": 192,
+        "rate": 0.725,
+        "created_at": "2026-02-03 04:05:22"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 6,
+        "job_id": 6,
+        "log_date": "2026-02-07",
+        "hours": 16.5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "3 Sophie",
+    "contract_price": 2655,
+    "job_date": "2025-12-31",
+    "hours_spent": 82.5,
+    "client_name": "BGB",
+    "created_at": "2026-02-05 04:42:46",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [],
+    "hours_log": [
+      {
+        "id": 7,
+        "job_id": 7,
+        "log_date": "2025-12-31",
+        "hours": 82.5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "3 Sophie",
+    "contract_price": 390,
+    "job_date": "2026-01-12",
+    "hours_spent": 13,
+    "client_name": "BGB",
+    "created_at": "2026-02-05 04:44:10",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [],
+    "hours_log": [
+      {
+        "id": 8,
+        "job_id": 8,
+        "log_date": "2026-01-12",
+        "hours": 13,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Attic Stairs",
+    "contract_price": 745.47,
+    "job_date": "2026-02-16",
+    "hours_spent": 5.5,
+    "client_name": "232 Wycoff",
+    "created_at": "2026-02-10 01:53:36",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 24,
+        "job_id": 9,
+        "item_name": "attic stairs",
+        "cost": 300.01,
+        "tax": 0,
+        "created_at": "2026-02-10 01:54:37"
+      },
+      {
+        "id": 25,
+        "job_id": 9,
+        "item_name": "Trim",
+        "cost": 10.82,
+        "tax": 0,
+        "created_at": "2026-02-15 15:28:04"
+      }
+    ],
+    "labor": [
+      {
+        "id": 6,
+        "job_id": 9,
+        "helper_name": "Muhammad Ashar",
+        "hours": 4.5,
+        "rate": 30,
+        "is_flat_rate": 0,
+        "created_at": "2026-02-14 18:48:32"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 9,
+        "job_id": 9,
+        "miles": 46,
+        "rate": 0.725,
+        "created_at": "2026-02-10 01:55:41"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 9,
+        "job_id": 9,
+        "log_date": "2026-02-16",
+        "hours": 5.5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "7 La Valencia",
+    "contract_price": 650,
+    "job_date": "2026-03-15",
+    "hours_spent": 6,
+    "client_name": "Michael",
+    "created_at": "2026-03-15 20:14:20",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 26,
+        "job_id": 10,
+        "item_name": "Clamps, Cable, Wood",
+        "cost": 20.19,
+        "tax": 1.34,
+        "created_at": "2026-03-15 20:17:17"
+      }
+    ],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 10,
+        "job_id": 10,
+        "miles": 30,
+        "rate": 0.725,
+        "created_at": "2026-03-15 20:15:23"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 10,
+        "job_id": 10,
+        "log_date": "2026-03-15",
+        "hours": 6,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "16 Garwood - Deck",
+    "contract_price": 2550,
+    "job_date": "2026-03-28",
+    "hours_spent": 16,
+    "client_name": null,
+    "created_at": "2026-03-15 22:34:37",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 27,
+        "job_id": 11,
+        "item_name": "Estimate ",
+        "cost": 618.75,
+        "tax": 0,
+        "created_at": "2026-03-15 22:52:28"
+      }
+    ],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 11,
+        "job_id": 11,
+        "miles": 35,
+        "rate": 0.725,
+        "created_at": "2026-03-30 12:22:11"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 11,
+        "job_id": 11,
+        "log_date": "2026-03-28",
+        "hours": 16,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "6 Brian",
+    "contract_price": 140,
+    "job_date": "2026-03-28",
+    "hours_spent": 1,
+    "client_name": "Terry FinkelStein",
+    "created_at": "2026-03-30 12:23:17",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 28,
+        "job_id": 12,
+        "item_name": "Screws",
+        "cost": 3.8,
+        "tax": 0,
+        "created_at": "2026-03-30 12:24:41"
+      }
+    ],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 12,
+        "job_id": 12,
+        "miles": 8,
+        "rate": 0.725,
+        "created_at": "2026-03-30 12:24:05"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 12,
+        "job_id": 12,
+        "log_date": "2026-03-28",
+        "hours": 1,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "name": "2 Jester",
+    "contract_price": 10406,
+    "job_date": "2026-04-04",
+    "hours_spent": 8.5,
+    "client_name": "Frank Maurer",
+    "created_at": "2026-03-30 12:25:35",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 30,
+        "job_id": 13,
+        "item_name": "2x12",
+        "cost": 37.66,
+        "tax": 0,
+        "created_at": "2026-04-26 02:14:56"
+      },
+      {
+        "id": 31,
+        "job_id": 13,
+        "item_name": "May 3 materials",
+        "cost": 257.12,
+        "tax": 0,
+        "created_at": "2026-05-03 12:58:14"
+      },
+      {
+        "id": 32,
+        "job_id": 13,
+        "item_name": "L90z",
+        "cost": 15.7,
+        "tax": 0,
+        "created_at": "2026-05-05 02:30:18"
+      },
+      {
+        "id": 33,
+        "job_id": 13,
+        "item_name": "Drywall and supplies ",
+        "cost": 145.91,
+        "tax": 0,
+        "created_at": "2026-05-05 14:11:44"
+      },
+      {
+        "id": 34,
+        "job_id": 13,
+        "item_name": "Lowes Return",
+        "cost": -24.99,
+        "tax": 0,
+        "created_at": "2026-05-05 19:48:53"
+      },
+      {
+        "id": 35,
+        "job_id": 13,
+        "item_name": "HD Return",
+        "cost": -29.14,
+        "tax": 0,
+        "created_at": "2026-05-05 20:15:42"
+      },
+      {
+        "id": 36,
+        "job_id": 13,
+        "item_name": "HD - flooring plus more ",
+        "cost": 528.99,
+        "tax": 0,
+        "created_at": "2026-05-09 22:18:28"
+      },
+      {
+        "id": 37,
+        "job_id": 13,
+        "item_name": "HD - Auger Bit",
+        "cost": 46.12,
+        "tax": 0,
+        "created_at": "2026-05-09 22:19:05"
+      },
+      {
+        "id": 38,
+        "job_id": 13,
+        "item_name": "HD - Misc",
+        "cost": 95.85,
+        "tax": 0,
+        "created_at": "2026-05-09 22:19:48"
+      },
+      {
+        "id": 43,
+        "job_id": 13,
+        "item_name": "HD Return",
+        "cost": -125.22,
+        "tax": 0,
+        "created_at": "2026-05-12 21:40:00"
+      },
+      {
+        "id": 44,
+        "job_id": 13,
+        "item_name": "Paint",
+        "cost": 31.97,
+        "tax": 0,
+        "created_at": "2026-05-12 21:40:26"
+      },
+      {
+        "id": 45,
+        "job_id": 13,
+        "item_name": "Home Depot - Paint Trim",
+        "cost": 234.6,
+        "tax": 0,
+        "created_at": "2026-05-16 23:18:06"
+      },
+      {
+        "id": 46,
+        "job_id": 13,
+        "item_name": "Home Depot - misc",
+        "cost": 67.6,
+        "tax": 0,
+        "created_at": "2026-05-16 23:18:42"
+      },
+      {
+        "id": 47,
+        "job_id": 13,
+        "item_name": "HD ",
+        "cost": 31.22,
+        "tax": 0,
+        "created_at": "2026-05-22 12:14:35"
+      },
+      {
+        "id": 48,
+        "job_id": 13,
+        "item_name": "HD",
+        "cost": 30.05,
+        "tax": 0,
+        "created_at": "2026-05-22 12:14:48"
+      },
+      {
+        "id": 51,
+        "job_id": 13,
+        "item_name": "5/30 HD smoke detectors + gas tape",
+        "cost": 102.85,
+        "tax": 6.81,
+        "created_at": "2026-05-31 02:14:49"
+      }
+    ],
+    "labor": [
+      {
+        "id": 7,
+        "job_id": 13,
+        "helper_name": "Engineer",
+        "hours": 0,
+        "rate": 450,
+        "is_flat_rate": 1,
+        "created_at": "2026-04-05 19:22:37"
+      },
+      {
+        "id": 8,
+        "job_id": 13,
+        "helper_name": "Muhammad Ashar",
+        "hours": 0,
+        "rate": 300,
+        "is_flat_rate": 1,
+        "created_at": "2026-04-26 02:14:06"
+      },
+      {
+        "id": 9,
+        "job_id": 13,
+        "helper_name": "Muhammad Ashar",
+        "hours": 0,
+        "rate": 275,
+        "is_flat_rate": 1,
+        "created_at": "2026-05-03 21:34:52"
+      },
+      {
+        "id": 10,
+        "job_id": 13,
+        "helper_name": "Miguel",
+        "hours": 0,
+        "rate": 400,
+        "is_flat_rate": 1,
+        "created_at": "2026-05-09 22:11:47"
+      },
+      {
+        "id": 11,
+        "job_id": 13,
+        "helper_name": "Haris",
+        "hours": 0,
+        "rate": 350,
+        "is_flat_rate": 1,
+        "created_at": "2026-05-16 23:16:30"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 13,
+        "job_id": 13,
+        "miles": 120,
+        "rate": 0.725,
+        "created_at": "2026-04-07 20:43:08"
+      },
+      {
+        "id": 18,
+        "job_id": 13,
+        "miles": 50,
+        "rate": 0.725,
+        "created_at": "2026-04-26 02:13:22"
+      },
+      {
+        "id": 19,
+        "job_id": 13,
+        "miles": 15,
+        "rate": 0.725,
+        "created_at": "2026-05-03 12:59:13"
+      },
+      {
+        "id": 20,
+        "job_id": 13,
+        "miles": 44,
+        "rate": 0.725,
+        "created_at": "2026-05-03 21:35:56"
+      },
+      {
+        "id": 22,
+        "job_id": 13,
+        "miles": 53,
+        "rate": 0.725,
+        "created_at": "2026-05-04 21:02:58"
+      },
+      {
+        "id": 23,
+        "job_id": 13,
+        "miles": 65.4,
+        "rate": 0.725,
+        "created_at": "2026-05-09 22:23:53"
+      },
+      {
+        "id": 26,
+        "job_id": 13,
+        "miles": 40,
+        "rate": 0.725,
+        "created_at": "2026-05-16 23:22:19"
+      },
+      {
+        "id": 27,
+        "job_id": 13,
+        "miles": 52,
+        "rate": 0.725,
+        "created_at": "2026-05-22 12:15:55"
+      },
+      {
+        "id": 30,
+        "job_id": 13,
+        "miles": 41.48,
+        "rate": 0.725,
+        "created_at": "2026-05-31 02:14:49"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 13,
+        "job_id": 13,
+        "log_date": "2026-04-04",
+        "hours": 8.5,
+        "note": "Migrated from hours_spent",
+        "created_at": "2026-04-07 22:16:23"
+      },
+      {
+        "id": 18,
+        "job_id": 13,
+        "log_date": "2026-04-25",
+        "hours": 7,
+        "note": "Framing",
+        "created_at": "2026-04-26 02:13:57"
+      },
+      {
+        "id": 19,
+        "job_id": 13,
+        "log_date": "2026-05-03",
+        "hours": 5.5,
+        "note": null,
+        "created_at": "2026-05-03 21:34:39"
+      },
+      {
+        "id": 25,
+        "job_id": 13,
+        "log_date": "2026-05-04",
+        "hours": 5.5,
+        "note": "Pre-inspection stuff",
+        "created_at": "2026-05-04 21:03:16"
+      },
+      {
+        "id": 26,
+        "job_id": 13,
+        "log_date": "2026-05-05",
+        "hours": 9,
+        "note": "Inspection and drywall hanging",
+        "created_at": "2026-05-05 20:16:23"
+      },
+      {
+        "id": 27,
+        "job_id": 13,
+        "log_date": "2026-05-09",
+        "hours": 10,
+        "note": "Work with miguel",
+        "created_at": "2026-05-09 22:11:27"
+      },
+      {
+        "id": 32,
+        "job_id": 13,
+        "log_date": "2026-05-16",
+        "hours": 7.5,
+        "note": "Work with haris",
+        "created_at": "2026-05-16 23:22:37"
+      },
+      {
+        "id": 33,
+        "job_id": 13,
+        "log_date": "2026-05-21",
+        "hours": 8,
+        "note": "Final Inspection",
+        "created_at": "2026-05-22 12:11:39"
+      },
+      {
+        "id": 35,
+        "job_id": 13,
+        "log_date": "2026-05-30",
+        "hours": 4.6,
+        "note": "Smoke detector install + HD run",
+        "created_at": "2026-05-31 02:14:49"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "3 Dogwood",
+    "contract_price": 400,
+    "job_date": "2026-04-12",
+    "hours_spent": null,
+    "client_name": null,
+    "created_at": "2026-04-09 12:21:45",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 29,
+        "job_id": 15,
+        "item_name": "Access panel",
+        "cost": 47.96,
+        "tax": 3.18,
+        "created_at": "2026-04-12 14:30:27"
+      }
+    ],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 14,
+        "job_id": 15,
+        "miles": 3,
+        "rate": 0.725,
+        "created_at": "2026-04-09 12:22:24"
+      },
+      {
+        "id": 15,
+        "job_id": 15,
+        "miles": 6,
+        "rate": 0.725,
+        "created_at": "2026-04-12 14:31:14"
+      },
+      {
+        "id": 16,
+        "job_id": 15,
+        "miles": 6,
+        "rate": 0.725,
+        "created_at": "2026-04-12 15:09:38"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 14,
+        "job_id": 15,
+        "log_date": "2026-04-09",
+        "hours": 0.5,
+        "note": "Consult",
+        "created_at": "2026-04-09 12:22:53"
+      },
+      {
+        "id": 16,
+        "job_id": 15,
+        "log_date": "2026-04-12",
+        "hours": 1.5,
+        "note": null,
+        "created_at": "2026-04-12 14:30:50"
+      },
+      {
+        "id": 17,
+        "job_id": 15,
+        "log_date": "2026-04-14",
+        "hours": 0.5,
+        "note": null,
+        "created_at": "2026-04-12 15:09:26"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "name": "211 Hidden Woods",
+    "contract_price": 150,
+    "job_date": "2026-05-03",
+    "hours_spent": null,
+    "client_name": "Madhuri",
+    "created_at": "2026-05-03 21:34:08",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 21,
+        "job_id": 16,
+        "miles": 15,
+        "rate": 0.725,
+        "created_at": "2026-05-03 21:37:45"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 20,
+        "job_id": 16,
+        "log_date": "2026-05-10",
+        "hours": 1,
+        "note": null,
+        "created_at": "2026-05-03 21:37:54"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "name": "3 Cameron",
+    "contract_price": 1050,
+    "job_date": "2026-05-11",
+    "hours_spent": null,
+    "client_name": "Jeffery Stuart",
+    "created_at": "2026-05-12 21:26:39",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 39,
+        "job_id": 17,
+        "item_name": "Lowes",
+        "cost": 229.43,
+        "tax": 0,
+        "created_at": "2026-05-12 21:27:48"
+      },
+      {
+        "id": 40,
+        "job_id": 17,
+        "item_name": "Home Depot",
+        "cost": 100.88,
+        "tax": 0,
+        "created_at": "2026-05-12 21:28:06"
+      },
+      {
+        "id": 41,
+        "job_id": 17,
+        "item_name": "Lowes Return",
+        "cost": -114.04,
+        "tax": 0,
+        "created_at": "2026-05-12 21:28:30"
+      },
+      {
+        "id": 42,
+        "job_id": 17,
+        "item_name": "Home Depot Return",
+        "cost": -32.5,
+        "tax": 0,
+        "created_at": "2026-05-12 21:29:47"
+      }
+    ],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 24,
+        "job_id": 17,
+        "miles": 21,
+        "rate": 0.725,
+        "created_at": "2026-05-12 21:32:55"
+      },
+      {
+        "id": 25,
+        "job_id": 17,
+        "miles": 20,
+        "rate": 0.725,
+        "created_at": "2026-05-12 21:33:39"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 28,
+        "job_id": 17,
+        "log_date": "2026-05-11",
+        "hours": 9,
+        "note": null,
+        "created_at": "2026-05-12 21:30:16"
+      },
+      {
+        "id": 31,
+        "job_id": 17,
+        "log_date": "2026-05-12",
+        "hours": 2,
+        "note": null,
+        "created_at": "2026-05-12 21:30:31"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Basement Door + Outlet Check - Cepeda",
+    "contract_price": 475,
+    "job_date": "2026-06-06",
+    "hours_spent": null,
+    "client_name": "Denise Cepeda",
+    "created_at": "2026-05-25 16:02:59",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 28,
+        "job_id": 18,
+        "miles": 170,
+        "rate": 0.725,
+        "created_at": "2026-05-26 02:24:08"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 36,
+        "job_id": 18,
+        "log_date": "2026-06-07",
+        "hours": 3,
+        "note": null,
+        "created_at": "2026-06-08 14:14:27"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "name": "2 Weck",
+    "contract_price": 418,
+    "job_date": "2026-05-30",
+    "hours_spent": 0,
+    "client_name": "2 Weck",
+    "created_at": "2026-05-31 02:14:47",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 49,
+        "job_id": 19,
+        "item_name": "5/30 HD closet system part 1",
+        "cost": 113.75,
+        "tax": 7.53,
+        "created_at": "2026-05-31 02:14:47"
+      },
+      {
+        "id": 50,
+        "job_id": 19,
+        "item_name": "5/30 HD closet rod + brackets",
+        "cost": 37.96,
+        "tax": 2.51,
+        "created_at": "2026-05-31 02:14:48"
+      }
+    ],
+    "labor": [],
+    "mileage": [
+      {
+        "id": 29,
+        "job_id": 19,
+        "miles": 19.68,
+        "rate": 0.725,
+        "created_at": "2026-05-31 02:14:48"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 34,
+        "job_id": 19,
+        "log_date": "2026-05-30",
+        "hours": 6.6,
+        "note": "Closet install + HD runs + callback",
+        "created_at": "2026-05-31 02:14:48"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "name": "Mei Thomas",
+    "contract_price": 900,
+    "job_date": "2026-06-13",
+    "hours_spent": 6,
+    "client_name": "Mei Thomas - Monmouth Junction",
+    "created_at": "2026-05-31 20:29:17",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 88,
+        "job_id": 20,
+        "item_name": "Purdy WhiteDove Roller Kit",
+        "cost": 14.98,
+        "tax": 0.99,
+        "created_at": "2026-06-17 22:16:24"
+      },
+      {
+        "id": 89,
+        "job_id": 20,
+        "item_name": "SHEETROCK Easy Sand 18-lb",
+        "cost": 13.96,
+        "tax": 0.93,
+        "created_at": "2026-06-17 22:16:24"
+      }
+    ],
+    "labor": [
+      {
+        "id": 17,
+        "job_id": 20,
+        "helper_name": "Miguel",
+        "hours": 0,
+        "rate": 300,
+        "is_flat_rate": 1,
+        "created_at": "2026-06-17 21:29:57"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 32,
+        "job_id": 20,
+        "miles": 28.08,
+        "rate": 0.725,
+        "created_at": "2026-06-17 21:29:57"
+      },
+      {
+        "id": 33,
+        "job_id": 20,
+        "miles": 28.08,
+        "rate": 0.725,
+        "created_at": "2026-06-17 21:29:57"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 42,
+        "job_id": 20,
+        "log_date": "2026-06-13",
+        "hours": 4,
+        "note": "Mei Thomas - on-site work",
+        "created_at": "2026-06-17 21:29:58"
+      },
+      {
+        "id": 43,
+        "job_id": 20,
+        "log_date": "2026-06-15",
+        "hours": 2,
+        "note": "Mei Thomas - on-site work",
+        "created_at": "2026-06-17 21:29:58"
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Debbie Swansen",
+    "contract_price": 2500,
+    "job_date": "2026-06-11",
+    "hours_spent": 0,
+    "client_name": "Debbie Swansen - 24 Victory Place EB",
+    "created_at": "2026-05-31 21:15:14",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 66,
+        "job_id": 21,
+        "item_name": "HD roller frame org handle x1",
+        "cost": 4.68,
+        "tax": 0.31,
+        "created_at": "2026-06-12 10:48:08"
+      },
+      {
+        "id": 67,
+        "job_id": 21,
+        "item_name": "Frog tape 3pk multi-surface",
+        "cost": 22.9,
+        "tax": 1.52,
+        "created_at": "2026-06-12 10:48:08"
+      },
+      {
+        "id": 68,
+        "job_id": 21,
+        "item_name": "Better knit poly roller cover 3pk x1",
+        "cost": 9.98,
+        "tax": 0.66,
+        "created_at": "2026-06-12 10:48:09"
+      },
+      {
+        "id": 69,
+        "job_id": 21,
+        "item_name": "SikaCryl concrete patch 1qt",
+        "cost": 11.97,
+        "tax": 0.79,
+        "created_at": "2026-06-12 10:48:09"
+      },
+      {
+        "id": 70,
+        "job_id": 21,
+        "item_name": "QEP 7in floor scraper",
+        "cost": 41.77,
+        "tax": 2.77,
+        "created_at": "2026-06-12 10:48:09"
+      },
+      {
+        "id": 71,
+        "job_id": 21,
+        "item_name": "Canvas drop cloth x2",
+        "cost": 59.96,
+        "tax": 3.97,
+        "created_at": "2026-06-12 10:48:10"
+      },
+      {
+        "id": 72,
+        "job_id": 21,
+        "item_name": "Behr PF anti-slip x3",
+        "cost": 131.94,
+        "tax": 8.74,
+        "created_at": "2026-06-12 10:48:10"
+      },
+      {
+        "id": 73,
+        "job_id": 21,
+        "item_name": "Behr CM bond primer 880 gal x1",
+        "cost": 29.98,
+        "tax": 1.99,
+        "created_at": "2026-06-12 10:48:10"
+      },
+      {
+        "id": 74,
+        "job_id": 21,
+        "item_name": "CE flat panel white x2",
+        "cost": 109.94,
+        "tax": 7.28,
+        "created_at": "2026-06-12 10:48:10"
+      },
+      {
+        "id": 78,
+        "job_id": 21,
+        "item_name": "Southwire 14/2 Romex 50ft",
+        "cost": 52,
+        "tax": 3.45,
+        "created_at": "2026-06-12 10:48:12"
+      },
+      {
+        "id": 82,
+        "job_id": 21,
+        "item_name": "Gardner Bender PVC box cover",
+        "cost": 4.58,
+        "tax": 0.3,
+        "created_at": "2026-06-12 10:48:13"
+      },
+      {
+        "id": 83,
+        "job_id": 21,
+        "item_name": "Gardner Bender PVC box cover",
+        "cost": 4.58,
+        "tax": 0.3,
+        "created_at": "2026-06-12 10:48:13"
+      },
+      {
+        "id": 84,
+        "job_id": 21,
+        "item_name": "Project Source paint tray x1",
+        "cost": 8.98,
+        "tax": 0.59,
+        "created_at": "2026-06-12 10:48:14"
+      }
+    ],
+    "labor": [
+      {
+        "id": 15,
+        "job_id": 21,
+        "helper_name": "Miguel",
+        "hours": 0,
+        "rate": 650,
+        "is_flat_rate": 1,
+        "created_at": "2026-06-12 10:52:53"
+      },
+      {
+        "id": 16,
+        "job_id": 21,
+        "helper_name": "Fernando",
+        "hours": 0,
+        "rate": 200,
+        "is_flat_rate": 1,
+        "created_at": "2026-06-12 10:53:01"
+      }
+    ],
+    "mileage": [],
+    "hours_log": [
+      {
+        "id": 44,
+        "job_id": 21,
+        "log_date": "2026-06-11",
+        "hours": 9.5,
+        "note": null,
+        "created_at": "2026-06-17 22:12:36"
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "name": "2 Vernon - Kitchen & Bath",
+    "contract_price": 2500.28,
+    "job_date": "2026-06-03",
+    "hours_spent": null,
+    "client_name": "2 Vernon",
+    "created_at": "2026-06-02 02:45:14",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 52,
+        "job_id": 23,
+        "item_name": "Oak base molding (7 pcs)",
+        "cost": 24.08,
+        "tax": 0,
+        "created_at": "2026-06-05 22:11:21"
+      },
+      {
+        "id": 53,
+        "job_id": 23,
+        "item_name": "Drywall repair panel",
+        "cost": 7.33,
+        "tax": 0,
+        "created_at": "2026-06-05 22:11:21"
+      },
+      {
+        "id": 54,
+        "job_id": 23,
+        "item_name": "1-1/2 PVC cap",
+        "cost": 1.88,
+        "tax": 0,
+        "created_at": "2026-06-05 22:11:22"
+      },
+      {
+        "id": 55,
+        "job_id": 23,
+        "item_name": "1/2 SharkBite end stop",
+        "cost": 9.11,
+        "tax": 0,
+        "created_at": "2026-06-05 22:11:22"
+      },
+      {
+        "id": 56,
+        "job_id": 23,
+        "item_name": "3/4 SharkBite end stop",
+        "cost": 10.23,
+        "tax": 0,
+        "created_at": "2026-06-05 22:11:22"
+      },
+      {
+        "id": 57,
+        "job_id": 23,
+        "item_name": "Milwaukee grout removal blade",
+        "cost": 29.97,
+        "tax": 0,
+        "created_at": "2026-06-05 22:11:23"
+      },
+      {
+        "id": 58,
+        "job_id": 23,
+        "item_name": "7in premium tile diamond blade",
+        "cost": 49.97,
+        "tax": 0,
+        "created_at": "2026-06-05 22:14:52"
+      },
+      {
+        "id": 59,
+        "job_id": 23,
+        "item_name": "QEP dual grit sanding stone",
+        "cost": 12.97,
+        "tax": 0,
+        "created_at": "2026-06-05 22:14:52"
+      },
+      {
+        "id": 60,
+        "job_id": 23,
+        "item_name": "1/4in PTC x 1/4in PTC x 15ft coil",
+        "cost": 26.71,
+        "tax": 0,
+        "created_at": "2026-06-05 22:14:52"
+      },
+      {
+        "id": 61,
+        "job_id": 23,
+        "item_name": "HD sales tax (receipts 6/4 + 6/5)",
+        "cost": 6.11,
+        "tax": 0,
+        "created_at": "2026-06-05 22:14:53"
+      },
+      {
+        "id": 63,
+        "job_id": 23,
+        "item_name": "Fridge",
+        "cost": 1171.92,
+        "tax": 0,
+        "created_at": "2026-06-08 14:18:53"
+      }
+    ],
+    "labor": [
+      {
+        "id": 13,
+        "job_id": 23,
+        "helper_name": "Subcontractor",
+        "hours": 0,
+        "rate": 800,
+        "is_flat_rate": 1,
+        "created_at": "2026-06-02 02:45:50"
+      }
+    ],
+    "mileage": [],
+    "hours_log": [
+      {
+        "id": 40,
+        "job_id": 23,
+        "log_date": "2026-06-04",
+        "hours": 2,
+        "note": null,
+        "created_at": "2026-06-08 14:19:23"
+      },
+      {
+        "id": 41,
+        "job_id": 23,
+        "log_date": "2026-06-05",
+        "hours": 2,
+        "note": null,
+        "created_at": "2026-06-08 14:19:32"
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "name": "81 Hoy Ave - Shed Reskin",
+    "contract_price": 2200,
+    "job_date": "2026-06-10",
+    "hours_spent": null,
+    "client_name": "Ivan & Jeanette",
+    "created_at": "2026-06-02 02:47:17",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [
+      {
+        "id": 62,
+        "job_id": 24,
+        "item_name": "HD",
+        "cost": 908.96,
+        "tax": 0,
+        "created_at": "2026-06-08 14:15:31"
+      },
+      {
+        "id": 64,
+        "job_id": 24,
+        "item_name": "Hd returns",
+        "cost": -344.27,
+        "tax": 0,
+        "created_at": "2026-06-08 22:04:58"
+      },
+      {
+        "id": 65,
+        "job_id": 24,
+        "item_name": "Miguel materials",
+        "cost": 56,
+        "tax": 0,
+        "created_at": "2026-06-08 22:05:22"
+      }
+    ],
+    "labor": [
+      {
+        "id": 14,
+        "job_id": 24,
+        "helper_name": "Miguel",
+        "hours": 0,
+        "rate": 800,
+        "is_flat_rate": 1,
+        "created_at": "2026-06-08 14:14:54"
+      }
+    ],
+    "mileage": [
+      {
+        "id": 31,
+        "job_id": 24,
+        "miles": 60,
+        "rate": 0.725,
+        "created_at": "2026-06-08 14:16:15"
+      }
+    ],
+    "hours_log": [
+      {
+        "id": 37,
+        "job_id": 24,
+        "log_date": "2026-06-08",
+        "hours": 2,
+        "note": null,
+        "created_at": "2026-06-08 14:16:39"
+      },
+      {
+        "id": 38,
+        "job_id": 24,
+        "log_date": "2026-05-12",
+        "hours": 1,
+        "note": null,
+        "created_at": "2026-06-08 14:17:05"
+      },
+      {
+        "id": 39,
+        "job_id": 24,
+        "log_date": "2026-05-18",
+        "hours": 1,
+        "note": null,
+        "created_at": "2026-06-08 14:17:16"
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "10 Cassandra",
+    "contract_price": 150,
+    "job_date": "2026-06-20",
+    "hours_spent": 1.5,
+    "client_name": "10 Cassandra Ct Monroe",
+    "created_at": "2026-06-20 20:37:44",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [],
+    "hours_log": []
+  },
+  {
+    "id": 27,
+    "name": "6 Krumb",
+    "contract_price": 250,
+    "job_date": "2026-06-20",
+    "hours_spent": 4,
+    "client_name": "6 Krumb St Sayreville",
+    "created_at": "2026-06-20 20:38:10",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [],
+    "hours_log": []
+  },
+  {
+    "id": 28,
+    "name": "39 Aspen Dr",
+    "contract_price": 800,
+    "job_date": "2026-06-27",
+    "hours_spent": 0,
+    "client_name": "39 Aspen Dr",
+    "created_at": "2026-06-22 13:38:22",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [],
+    "hours_log": []
+  },
+  {
+    "id": 29,
+    "name": "42 Amherst St",
+    "contract_price": 980,
+    "job_date": "2026-07-02",
+    "hours_spent": 0,
+    "client_name": "42 Amherst St",
+    "created_at": "2026-06-22 16:35:20",
+    "user_id": "user_39VCh0LoaJ36V134l6aTbTfDVLl",
+    "materials": [],
+    "labor": [],
+    "mileage": [],
+    "hours_log": []
+  }
+]

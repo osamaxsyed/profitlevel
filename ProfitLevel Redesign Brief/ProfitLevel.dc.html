@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:#100F0D;color:#F2EDE4;font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  ::selection{background:#FF6A1A;color:#100F0D;}
+  .pl-scroll::-webkit-scrollbar{width:0;height:0;}
+  .pl-scroll{scrollbar-width:none;}
+  a{color:inherit;text-decoration:none;}
+</style>
+</helmet>
+<div style="--accent:{{ accent }};--clay:#E0764E;min-height:100vh;">
+<div style="background:#100F0D;min-height:100vh;">
+
+  <!-- ====== TOP BAR / SWITCHER ====== -->
+  <div style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px clamp(16px,4vw,40px);background:rgba(16,15,13,0.82);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="position:relative;width:34px;height:18px;border-radius:9px;background:#0A0908;border:1.5px solid rgba(255,255,255,0.18);display:flex;align-items:center;">
+        <div style="position:absolute;left:1px;right:1px;top:50%;height:1px;background:rgba(255,255,255,0.12);"></div>
+        <div style="position:absolute;left:55%;top:50%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:var(--accent,#FF6A1A);box-shadow:0 0 8px rgba(255,106,26,0.6);"></div>
+        <div style="position:absolute;left:38%;top:2px;bottom:2px;width:1px;background:rgba(255,255,255,0.22);"></div>
+        <div style="position:absolute;left:62%;top:2px;bottom:2px;width:1px;background:rgba(255,255,255,0.22);"></div>
+      </div>
+      <div style="font-weight:800;letter-spacing:-0.01em;font-size:18px;">Profit<span style="color:var(--accent,#FF6A1A);">Level</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;padding:4px;background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:10px;">
+      <button onClick="{{ goLanding }}" style="border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;letter-spacing:0.04em;padding:7px 14px;border-radius:7px;background:{{ landingBg }};color:{{ landingFg }};">Landing</button>
+      <button onClick="{{ goApp }}" style="border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;letter-spacing:0.04em;padding:7px 14px;border-radius:7px;background:{{ appBg }};color:{{ appFg }};">Live demo</button>
+    </div>
+  </div>
+
+  <!-- ====== LANDING ====== -->
+  <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+  <div>
+
+    <!-- HERO -->
+    <div style="max-width:1120px;margin:0 auto;padding:clamp(40px,8vw,88px) clamp(16px,4vw,40px) clamp(32px,6vw,56px);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:26px;">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--accent,#FF6A1A);"></div>
+        <div style="font-weight:700;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#8A8073;">Profit tracking for one-person shops</div>
+      </div>
+      <h1 style="margin:0;font-weight:800;font-size:clamp(38px,7.4vw,76px);line-height:0.98;letter-spacing:-0.03em;max-width:14ch;">Know if the job paid before you load the truck.</h1>
+      <p style="margin:24px 0 0;max-width:50ch;font-size:clamp(16px,2vw,19px);line-height:1.55;color:#B6AD9D;">ProfitLevel scores every job against its day rate, then answers the one thing that matters at the end of the week: <span style="color:#F2EDE4;">are you on pace for your month.</span> Built for the guy doing the work — not the books.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;">
+        <button onClick="{{ goApp }}" style="border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;padding:14px 24px;border-radius:10px;background:var(--accent,#FF6A1A);color:#1A0E04;box-shadow:0 6px 20px rgba(255,106,26,0.28);">Open the live demo</button>
+        <a href="#math" style="display:inline-flex;align-items:center;font-weight:600;font-size:15px;padding:14px 22px;border-radius:10px;background:#1C1A16;border:1px solid rgba(255,255,255,0.1);color:#E6DECF;">See how the math works</a>
+      </div>
+
+      <!-- HERO ARTIFACTS -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-top:clamp(40px,6vw,64px);">
+
+        <!-- real job card -->
+        <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px;position:relative;overflow:hidden;">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,#FF6A1A);"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <span style="font-weight:700;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#1A0E04;background:var(--accent,#FF6A1A);padding:4px 9px;border-radius:6px;">Full day · $900</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A8073;">Jun 20</span>
+          </div>
+          <div style="margin-top:14px;font-weight:700;font-size:17px;line-height:1.25;">Master bath — set tile &amp; waterproof</div>
+          <div style="font-size:13px;color:#8A8073;margin-top:2px;">Eastgate · Tile</div>
+          <div style="height:1px;background:rgba(255,255,255,0.08);margin:14px 0;"></div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;">
+            <div>
+              <div style="font-weight:700;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">Gross profit</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:30px;letter-spacing:-0.02em;margin-top:3px;">$1,155</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:var(--accent,#FF6A1A);background:rgba(255,106,26,0.12);border:1px solid rgba(255,106,26,0.34);padding:5px 9px;border-radius:7px;">✓ CLEARED +$255</div>
+              <div style="font-size:11px;color:#8A8073;margin-top:6px;font-family:'IBM Plex Mono',monospace;">beat the $900 day rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- this month level -->
+        <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-weight:700;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">This month · goal</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A8073;">Jun 2026</div>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:12px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;letter-spacing:-0.02em;">$5,840</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#8A8073;">/ $7,500</div>
+          </div>
+          <!-- level tube -->
+          <div style="margin-top:20px;position:relative;height:30px;border-radius:15px;background:#0C0B09;border:1px solid rgba(255,255,255,0.08);box-shadow:inset 0 2px 6px rgba(0,0,0,0.6);overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:78%;background:linear-gradient(90deg,rgba(255,106,26,0.25),rgba(255,106,26,0.5));"></div>
+            <div style="position:absolute;left:73%;top:-2px;bottom:-2px;width:2px;background:rgba(242,237,228,0.55);"></div>
+            <div style="position:absolute;left:73%;top:-15px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#9A9183;transform:translateX(-50%);white-space:nowrap;">pace</div>
+            <div style="position:absolute;left:78%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:var(--accent,#FF6A1A);box-shadow:0 0 12px rgba(255,106,26,0.7);border:2px solid #1A1814;"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:auto;padding-top:18px;">
+            <span style="color:var(--accent,#FF6A1A);font-size:15px;">▲</span>
+            <span style="font-weight:700;font-size:14px;">Ahead of pace</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#B6AD9D;">+$340 vs. where you should be</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO LENSES -->
+    <div style="border-top:1px solid rgba(255,255,255,0.06);background:#13110F;">
+      <div style="max-width:1120px;margin:0 auto;padding:clamp(48px,7vw,80px) clamp(16px,4vw,40px);">
+        <div style="font-weight:700;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#FF6A1A);">Two questions. Never blurred.</div>
+        <h2 style="margin:14px 0 0;font-weight:800;font-size:clamp(26px,4.4vw,42px);letter-spacing:-0.02em;max-width:20ch;line-height:1.04;">Most apps mash these together. We keep them apart on purpose.</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:36px;">
+
+          <!-- lens 1 -->
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:22px;">
+            <div style="display:flex;align-items:center;gap:9px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:#8A8073;">01</div>
+              <div style="font-weight:800;font-size:19px;">Did I price this job right?</div>
+            </div>
+            <p style="margin:10px 0 18px;color:#B6AD9D;font-size:15px;line-height:1.5;">A per-job verdict. Stamp it the second the job closes — gross profit against the day rate you set out to hit. Black and white.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;font-family:'IBM Plex Mono',monospace;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:#13110F;border-radius:9px;border:1px solid rgba(255,255,255,0.05);">
+                <span style="font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;">Powder room retile</span>
+                <span style="font-size:12px;color:var(--accent,#FF6A1A);background:rgba(255,106,26,0.12);border:1px solid rgba(255,106,26,0.32);padding:4px 8px;border-radius:6px;">✓ +$137</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:#13110F;border-radius:9px;border:1px solid rgba(255,255,255,0.05);">
+                <span style="font-family:'Archivo',sans-serif;font-weight:600;font-size:14px;">Kelford Ave — vanity</span>
+                <span style="font-size:12px;color:var(--clay,#E0764E);background:rgba(224,118,78,0.1);border:1px solid rgba(224,118,78,0.32);padding:4px 8px;border-radius:6px;">✗ −$126</span>
+              </div>
+            </div>
+            <div style="margin-top:16px;font-weight:700;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#6E665A;">Lens: the stamp · per job</div>
+          </div>
+
+          <!-- lens 2 -->
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:22px;">
+            <div style="display:flex;align-items:center;gap:9px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;color:#8A8073;">02</div>
+              <div style="font-weight:800;font-size:19px;">Am I hitting my number?</div>
+            </div>
+            <p style="margin:10px 0 18px;color:#B6AD9D;font-size:15px;line-height:1.5;">A running read on the month and the year. Not a verdict — a level. Are you plumb on your goal, or do you need to book another day this week?</p>
+            <div style="background:#13110F;border-radius:10px;border:1px solid rgba(255,255,255,0.05);padding:16px;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:22px;">$5,840</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8A8073;">/ $7,500 goal</span>
+              </div>
+              <div style="margin-top:14px;position:relative;height:22px;border-radius:11px;background:#0C0B09;border:1px solid rgba(255,255,255,0.08);overflow:hidden;">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:78%;background:linear-gradient(90deg,rgba(255,106,26,0.25),rgba(255,106,26,0.5));"></div>
+                <div style="position:absolute;left:73%;top:-2px;bottom:-2px;width:2px;background:rgba(242,237,228,0.5);"></div>
+                <div style="position:absolute;left:78%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--accent,#FF6A1A);border:2px solid #13110F;box-shadow:0 0 10px rgba(255,106,26,0.7);"></div>
+              </div>
+            </div>
+            <div style="margin-top:16px;font-weight:700;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#6E665A;">Lens: the level · per month + year</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAY RATE TIERS -->
+    <div style="border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="max-width:1120px;margin:0 auto;padding:clamp(48px,7vw,80px) clamp(16px,4vw,40px);">
+        <div style="font-weight:700;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#FF6A1A);">Score by the day, not the hour</div>
+        <h2 style="margin:14px 0 0;font-weight:800;font-size:clamp(26px,4.4vw,42px);letter-spacing:-0.02em;max-width:22ch;line-height:1.04;">You don't bill in six-minute increments. So you shouldn't grade jobs that way.</h2>
+        <p style="margin:16px 0 0;max-width:54ch;color:#B6AD9D;font-size:16px;line-height:1.55;">Set four day-rate tiers. A job <span style="color:#F2EDE4;">clears</span> when its gross profit beats the tier you meant to hit. No timesheets, no fake hourly math — just the rate you'd quote standing in the driveway.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:34px;">
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:20px;border-top:3px solid var(--accent,#FF6A1A);">
+            <div style="font-weight:700;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8A8073;">Full day</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;margin-top:8px;letter-spacing:-0.02em;">$900</div>
+            <div style="font-size:13px;color:#8A8073;margin-top:6px;">Tile sets, pan rebuilds, full installs.</div>
+          </div>
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:20px;border-top:3px solid rgba(255,106,26,0.6);">
+            <div style="font-weight:700;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8A8073;">Half day</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;margin-top:8px;letter-spacing:-0.02em;">$600</div>
+            <div style="font-size:13px;color:#8A8073;margin-top:6px;">Vanity swaps, fixtures, small demo.</div>
+          </div>
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:20px;border-top:3px solid rgba(255,106,26,0.38);">
+            <div style="font-weight:700;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8A8073;">Short job</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;margin-top:8px;letter-spacing:-0.02em;">$300</div>
+            <div style="font-size:13px;color:#8A8073;margin-top:6px;">Grab bars, caulk, a single repair.</div>
+          </div>
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:20px;border-top:3px solid rgba(255,106,26,0.2);">
+            <div style="font-weight:700;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8A8073;">Site visit</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;margin-top:8px;letter-spacing:-0.02em;">$175</div>
+            <div style="font-size:13px;color:#8A8073;margin-top:6px;">Walk-throughs, estimates, measure-ups.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THE MATH -->
+    <div id="math" style="border-top:1px solid rgba(255,255,255,0.06);background:#13110F;">
+      <div style="max-width:1120px;margin:0 auto;padding:clamp(48px,7vw,80px) clamp(16px,4vw,40px);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:36px;align-items:center;">
+          <div>
+            <div style="font-weight:700;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#FF6A1A);">The math is the product</div>
+            <h2 style="margin:14px 0 0;font-weight:800;font-size:clamp(26px,4.4vw,42px);letter-spacing:-0.02em;line-height:1.04;">Revenue, minus what it really cost, against the rate.</h2>
+            <p style="margin:16px 0 0;color:#B6AD9D;font-size:16px;line-height:1.55;">Materials. The helper you brought for the heavy half-day. The miles to the supply house and back. We subtract the costs that quietly eat a job, then hold the result up against your tier. No dashboards full of charts you'll never open.</p>
+            <p style="margin:16px 0 0;color:#8A8073;font-size:14px;line-height:1.5;font-family:'IBM Plex Mono',monospace;">Mileage figured at the current IRS standard rate.</p>
+          </div>
+          <!-- ledger -->
+          <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
+            <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-weight:700;font-size:14px;">Shower pan rebuild</span>
+              <span style="font-weight:700;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#1A0E04;background:var(--accent,#FF6A1A);padding:4px 9px;border-radius:6px;">Full day · $900</span>
+            </div>
+            <div style="padding:6px 18px;font-family:'IBM Plex Mono',monospace;">
+              <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed rgba(255,255,255,0.08);"><span style="color:#B6AD9D;">Revenue</span><span style="font-weight:600;">$1,620</span></div>
+              <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed rgba(255,255,255,0.08);"><span style="color:#B6AD9D;">Materials</span><span style="color:var(--clay,#E0764E);">−$410</span></div>
+              <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed rgba(255,255,255,0.08);"><span style="color:#B6AD9D;">Labor · helper ½ day</span><span style="color:var(--clay,#E0764E);">−$220</span></div>
+              <div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.14);"><span style="color:#B6AD9D;">Mileage · 16 mi</span><span style="color:var(--clay,#E0764E);">−$11</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 6px;"><span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;color:#8A8073;">Gross profit</span><span style="font-weight:600;font-size:24px;">$979</span></div>
+            </div>
+            <div style="margin:0 18px 18px;padding:12px 14px;border-radius:9px;background:rgba(255,106,26,0.1);border:1px solid rgba(255,106,26,0.3);display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-weight:700;font-size:14px;color:var(--accent,#FF6A1A);">✓ Cleared the full-day rate</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--accent,#FF6A1A);">+$79</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YEAR -->
+    <div style="border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="max-width:1120px;margin:0 auto;padding:clamp(48px,7vw,80px) clamp(16px,4vw,40px);">
+        <div style="font-weight:700;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#FF6A1A);">Plumb on the year</div>
+        <h2 style="margin:14px 0 0;font-weight:800;font-size:clamp(26px,4.4vw,42px);letter-spacing:-0.02em;max-width:20ch;line-height:1.04;">Your goal flexes with the season. The year is just the sum of it.</h2>
+        <p style="margin:16px 0 24px;max-width:54ch;color:#B6AD9D;font-size:16px;line-height:1.55;">Set a different number for slow February and a big August. ProfitLevel adds the twelve months into your annual target and keeps a running level on whether you're on grade.</p>
+        <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:22px;">
+          <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:30px;letter-spacing:-0.02em;">$38,640</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#8A8073;">/ $86,000 annual</span>
+            </div>
+            <span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:var(--accent,#FF6A1A);"><span>▲</span> Ahead of pace · +$640</span>
+          </div>
+          <div style="margin-top:18px;position:relative;height:18px;border-radius:9px;background:#0C0B09;border:1px solid rgba(255,255,255,0.08);overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:45%;background:linear-gradient(90deg,rgba(255,106,26,0.25),rgba(255,106,26,0.5));"></div>
+            <div style="position:absolute;left:44%;top:-2px;bottom:-2px;width:2px;background:rgba(242,237,228,0.5);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E665A;"><span>Jan</span><span>now</span><span>Dec</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="border-top:1px solid rgba(255,255,255,0.06);background:#0C0B09;">
+      <div style="max-width:1120px;margin:0 auto;padding:clamp(40px,6vw,64px) clamp(16px,4vw,40px);">
+        <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;">
+          <div style="max-width:40ch;">
+            <div style="font-weight:800;font-size:24px;letter-spacing:-0.01em;">Profit<span style="color:var(--accent,#FF6A1A);">Level</span></div>
+            <p style="margin:12px 0 0;color:#8A8073;font-size:15px;line-height:1.5;">A tool, not a platform. Made for bathroom remodelers and the trades that bill by the day. No per-seat pricing, no onboarding call.</p>
+          </div>
+          <button onClick="{{ goApp }}" style="border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;padding:14px 24px;border-radius:10px;background:var(--accent,#FF6A1A);color:#1A0E04;">Open the live demo</button>
+        </div>
+        <div style="margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:#5C544A;font-family:'IBM Plex Mono',monospace;">ProfitLevel · concept demo · figures are sample data</div>
+      </div>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <!-- ====== APP ====== -->
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+  <div style="padding:clamp(24px,5vw,56px) 16px 64px;display:flex;flex-direction:column;align-items:center;">
+    <div style="text-align:center;max-width:46ch;margin-bottom:28px;">
+      <div style="font-weight:700;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#FF6A1A);">The system, in the hand</div>
+      <p style="margin:10px 0 0;color:#9A9183;font-size:15px;line-height:1.5;">Tap a job to open its Day Type panel. Switch screens with the bar at the bottom.</p>
+    </div>
+
+    <!-- PHONE -->
+    <div style="width:392px;max-width:100%;border-radius:46px;background:#050505;padding:11px;box-shadow:0 40px 90px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.06);">
+      <div style="position:relative;border-radius:36px;overflow:hidden;background:#0E0D0B;height:812px;display:flex;flex-direction:column;">
+
+        <!-- status bar -->
+        <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 8px;font-family:'IBM Plex Mono',monospace;">
+          <span style="font-weight:600;font-size:14px;">9:41</span>
+          <div style="position:absolute;left:50%;top:9px;transform:translateX(-50%);width:96px;height:26px;background:#050505;border-radius:14px;"></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;">●●●</span>
+            <span style="font-size:11px;color:#9A9183;">5G</span>
+            <div style="width:22px;height:11px;border:1px solid rgba(255,255,255,0.5);border-radius:3px;padding:1px;"><div style="width:75%;height:100%;background:#F2EDE4;border-radius:1px;"></div></div>
+          </div>
+        </div>
+
+        <!-- scroll body -->
+        <div class="pl-scroll" style="flex:1;overflow-y:auto;overflow-x:hidden;">
+
+          <!-- DASHBOARD -->
+          <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:8px 18px 24px;">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:8px 0 18px;">
+              <div>
+                <div style="font-weight:800;font-size:24px;letter-spacing:-0.01em;">June 2026</div>
+                <div style="font-size:13px;color:#8A8073;margin-top:2px;">11 jobs logged · 22 of 30 days</div>
+              </div>
+              <div style="width:40px;height:40px;border-radius:50%;background:#1C1A16;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-weight:700;color:#9A9183;">JM</div>
+            </div>
+
+            <!-- THIS MONTH (lens 2: level) -->
+            <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-weight:700;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">This month · goal</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent,#FF6A1A);">on pace ✓</div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:9px;margin-top:14px;">
+                <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:40px;letter-spacing:-0.03em;">{{ month.earnedFmt }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#8A8073;">/ {{ month.goalFmt }}</div>
+              </div>
+              <div style="margin-top:22px;position:relative;height:34px;border-radius:17px;background:#0C0B09;border:1px solid rgba(255,255,255,0.08);box-shadow:inset 0 2px 7px rgba(0,0,0,0.6);overflow:hidden;">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:{{ month.pct }}%;background:linear-gradient(90deg,rgba(255,106,26,0.25),rgba(255,106,26,0.55));"></div>
+                <div style="position:absolute;left:{{ month.paceTick }}%;top:-2px;bottom:-2px;width:2px;background:rgba(242,237,228,0.55);"></div>
+                <div style="position:absolute;left:{{ month.paceTick }}%;top:-15px;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:9px;color:#9A9183;white-space:nowrap;">pace</div>
+                <div style="position:absolute;left:{{ month.pct }}%;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:var(--accent,#FF6A1A);box-shadow:0 0 13px rgba(255,106,26,0.75);border:2px solid #1A1814;"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:18px;">
+                <span style="color:var(--accent,#FF6A1A);font-size:15px;">▲</span>
+                <span style="font-weight:700;font-size:14px;">Ahead of pace</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#B6AD9D;">{{ month.deltaFmt }} vs. day 22</span>
+              </div>
+            </div>
+
+            <!-- YEAR strip -->
+            <div style="margin-top:12px;background:#15130F;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px 18px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-weight:700;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">On pace for the year</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A8073;">{{ year.ytdFmt }} / {{ year.annualFmt }}</div>
+              </div>
+              <div style="margin-top:12px;position:relative;height:14px;border-radius:7px;background:#0C0B09;border:1px solid rgba(255,255,255,0.08);overflow:hidden;">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:{{ year.pct }}%;background:linear-gradient(90deg,rgba(255,106,26,0.22),rgba(255,106,26,0.46));"></div>
+                <div style="position:absolute;left:{{ year.paceTick }}%;top:-2px;bottom:-2px;width:2px;background:rgba(242,237,228,0.45);"></div>
+              </div>
+              <div style="margin-top:9px;font-size:12px;color:var(--accent,#FF6A1A);font-weight:600;">{{ year.statusLabel }}</div>
+            </div>
+
+            <!-- recent jobs (lens 1: stamps) -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px;">
+              <div style="font-weight:700;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">Recent jobs</div>
+              <button onClick="{{ goJobs }}" style="border:0;background:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:var(--accent,#FF6A1A);">See all 11 →</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ recentJobs }}" as="job" hint-placeholder-count="3">
+                <div onClick="{{ job.onOpen }}" style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
+                  <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:{{ job.resultColor }};"></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <span style="font-weight:700;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#9A9183;background:#13110F;border:1px solid rgba(255,255,255,0.07);padding:3px 8px;border-radius:6px;">{{ job.tierLabel }} · {{ job.targetFmt }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A8073;">{{ job.date }}</span>
+                  </div>
+                  <div style="font-weight:700;font-size:15px;margin-top:11px;line-height:1.2;">{{ job.name }}</div>
+                  <div style="height:1px;background:rgba(255,255,255,0.07);margin:12px 0 11px;"></div>
+                  <div style="display:flex;align-items:flex-end;justify-content:space-between;">
+                    <div>
+                      <div style="font-weight:700;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#8A8073;">Gross profit</div>
+                      <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:22px;margin-top:2px;">{{ job.profitFmt }}</div>
+                    </div>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;white-space:nowrap;color:{{ job.resultColor }};background:{{ job.resultBg }};border:1px solid {{ job.resultBd }};padding:5px 9px;border-radius:7px;">{{ job.stamp }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- JOBS LIST -->
+          <sc-if value="{{ isJobs }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:8px 18px 24px;">
+            <div style="padding:8px 0 16px;">
+              <div style="font-weight:800;font-size:24px;letter-spacing:-0.01em;">Jobs</div>
+              <div style="font-size:13px;color:#8A8073;margin-top:2px;">June 2026 · {{ month.clearedCount }} of {{ month.jobCount }} cleared their tier</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ allJobs }}" as="job" hint-placeholder-count="6">
+                <div onClick="{{ job.onOpen }}" style="background:#1A1814;border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:14px;cursor:pointer;position:relative;overflow:hidden;">
+                  <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:{{ job.resultColor }};"></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <span style="font-weight:700;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#9A9183;background:#13110F;border:1px solid rgba(255,255,255,0.07);padding:3px 8px;border-radius:6px;">{{ job.tierLabel }} · {{ job.targetFmt }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A8073;">{{ job.date }}</span>
+                  </div>
+                  <div style="font-weight:700;font-size:15px;margin-top:11px;line-height:1.2;">{{ job.name }}</div>
+                  <div style="font-size:12px;color:#8A8073;margin-top:1px;">{{ job.sub }}</div>
+                  <div style="height:1px;background:rgba(255,255,255,0.07);margin:12px 0 11px;"></div>
+                  <div style="display:flex;align-items:flex-end;justify-content:space-between;">
+                    <div>
+                      <div style="font-weight:700;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#8A8073;">Gross profit</div>
+                      <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:22px;margin-top:2px;">{{ job.profitFmt }}</div>
+                    </div>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;white-space:nowrap;color:{{ job.resultColor }};background:{{ job.resultBg }};border:1px solid {{ job.resultBd }};padding:5px 9px;border-radius:7px;">{{ job.stamp }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- JOB DETAIL -->
+          <sc-if value="{{ isJob }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:8px 18px 28px;">
+            <button onClick="{{ goJobs }}" style="border:0;background:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#9A9183;padding:8px 0;display:flex;align-items:center;gap:6px;">← Jobs</button>
+            <div style="margin-top:4px;">
+              <div style="font-weight:800;font-size:21px;line-height:1.15;letter-spacing:-0.01em;">{{ detail.name }}</div>
+              <div style="font-size:13px;color:#8A8073;margin-top:4px;">{{ detail.sub }} · {{ detail.date }}</div>
+            </div>
+
+            <!-- DAY TYPE PANEL (lens 1) -->
+            <div style="margin-top:20px;background:#1A1814;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                <div style="font-weight:700;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">Day type</div>
+                <div style="font-size:11px;color:#6E665A;">what you set out to hit</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+                <sc-for list="{{ detail.tiers }}" as="t" hint-placeholder-count="4">
+                  <button onClick="{{ t.onSelect }}" style="cursor:pointer;font-family:inherit;text-align:left;padding:12px 13px;border-radius:11px;background:{{ t.bg }};border:1.5px solid {{ t.bd }};">
+                    <div style="font-weight:700;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;color:{{ t.labelColor }};">{{ t.label }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:20px;margin-top:3px;color:{{ t.valColor }};">{{ t.targetFmt }}</div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- LEDGER -->
+            <div style="margin-top:12px;background:#1A1814;border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+              <div style="padding:14px 18px 4px;font-weight:700;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">The math</div>
+              <div style="padding:2px 18px 8px;font-family:'IBM Plex Mono',monospace;">
+                <sc-for list="{{ detail.ledger }}" as="row" hint-placeholder-count="4">
+                  <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px dashed rgba(255,255,255,0.08);">
+                    <span style="color:#B6AD9D;font-size:14px;">{{ row.label }}</span>
+                    <span style="font-weight:600;font-size:14px;color:{{ row.color }};">{{ row.val }}</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;padding:15px 0 8px;">
+                  <span style="font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:#8A8073;">Gross profit</span>
+                  <span style="font-weight:600;font-size:28px;">{{ detail.profitFmt }}</span>
+                </div>
+              </div>
+              <!-- result banner -->
+              <div style="margin:0 18px 18px;padding:14px 15px;border-radius:11px;background:{{ detail.resultBg }};border:1px solid {{ detail.resultBd }};">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:800;font-size:15px;color:{{ detail.resultColor }};">{{ detail.resultHeadline }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:17px;color:{{ detail.resultColor }};">{{ detail.deltaFmt }}</span>
+                </div>
+                <div style="font-size:12px;color:#9A9183;margin-top:5px;">{{ detail.resultNote }}</div>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- GOALS GRID -->
+          <sc-if value="{{ isGoals }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:8px 18px 24px;">
+            <div style="padding:8px 0 16px;">
+              <div style="font-weight:800;font-size:24px;letter-spacing:-0.01em;">Monthly goals</div>
+              <div style="font-size:13px;color:#8A8073;margin-top:2px;">Set each month. The year is the sum.</div>
+            </div>
+            <!-- annual total -->
+            <div style="background:#1A1814;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;">
+              <div style="font-weight:700;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8A8073;">2026 annual target</div>
+              <div style="display:flex;align-items:baseline;gap:9px;margin-top:8px;">
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;letter-spacing:-0.02em;">{{ year.annualFmt }}</span>
+                <span style="font-size:13px;color:#8A8073;">= sum of 12 months</span>
+              </div>
+              <div style="margin-top:6px;font-size:12px;color:var(--accent,#FF6A1A);font-weight:600;">{{ year.ytdFmt }} earned so far · {{ year.statusLabel }}</div>
+            </div>
+            <!-- grid -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;">
+              <sc-for list="{{ goals }}" as="g" hint-placeholder-count="12">
+                <div style="background:{{ g.cardBg }};border:1px solid {{ g.cardBd }};border-radius:11px;padding:11px 11px 12px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-weight:700;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;color:{{ g.monColor }};">{{ g.m }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:{{ g.dotColor }};">{{ g.tag }}</span>
+                  </div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;margin-top:7px;color:{{ g.actualColor }};">{{ g.actualFmt }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E665A;">goal {{ g.goalFmt }}</div>
+                  <div style="margin-top:9px;height:5px;border-radius:3px;background:#0C0B09;overflow:hidden;">
+                    <div style="height:100%;width:{{ g.pct }}%;background:{{ g.barColor }};border-radius:3px;"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <div style="flex:none;display:flex;align-items:stretch;justify-content:space-around;padding:10px 18px 26px;background:#13110F;border-top:1px solid rgba(255,255,255,0.07);">
+          <button onClick="{{ goDash }}" style="flex:1;border:0;background:none;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;color:{{ navDash }};">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="9" width="18" height="6" rx="3"></rect><circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none"></circle></svg>
+            <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;">Level</span>
+          </button>
+          <button onClick="{{ goJobs }}" style="flex:1;border:0;background:none;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;color:{{ navJobs }};">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+            <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;">Jobs</span>
+          </button>
+          <button onClick="{{ goGoals }}" style="flex:1;border:0;background:none;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:5px;color:{{ navGoals }};">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 9h18M8 2v4M16 2v4"></path></svg>
+            <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;">Goals</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#FF6A1A&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#FF6A1A&quot;,&quot;#F25822&quot;,&quot;#FF8A3D&quot;,&quot;#E8B530&quot;]},&quot;mileageRate&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:0.67,&quot;min&quot;:0,&quot;max&quot;:2,&quot;step&quot;:0.01,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { view: 'landing', screen: 'dashboard', jobId: 'a', dayType: null };
+
+  TIERS = [
+    { key: 'full',  label: 'Full day',  target: 900 },
+    { key: 'half',  label: 'Half day',  target: 600 },
+    { key: 'short', label: 'Short job', target: 300 },
+    { key: 'visit', label: 'Site visit', target: 175 },
+  ];
+
+  JOBS = [
+    { id:'a', name:'Master bath — set tile & waterproof', sub:'Eastgate · Tile',     date:'Jun 20', tier:'full',  revenue:1450, materials:280, labor:0,   miles:22 },
+    { id:'b', name:'Kelford Ave — vanity & faucet',        sub:'Kelford Ave · Fixtures', date:'Jun 18', tier:'half',  revenue:720,  materials:240, labor:0,   miles:9  },
+    { id:'c', name:'Powder room retile',                   sub:'Linwood · Tile',      date:'Jun 16', tier:'short', revenue:540,  materials:95,  labor:0,   miles:12 },
+    { id:'d', name:'Walk-through & quote',                 sub:'Maple Crest · Estimate', date:'Jun 15', tier:'visit', revenue:175,  materials:0,   labor:0,   miles:18 },
+    { id:'e', name:'Shower pan rebuild',                   sub:'Box Hill · Wet area', date:'Jun 12', tier:'full',  revenue:1620, materials:410, labor:220, miles:16 },
+    { id:'f', name:'Grab bars + caulk refresh',            sub:'Riverside · Safety',  date:'Jun 10', tier:'short', revenue:360,  materials:40,  labor:0,   miles:7  },
+  ];
+
+  GOALS = [
+    { m:'Jan', goal:6000, actual:5820 },
+    { m:'Feb', goal:6000, actual:6340 },
+    { m:'Mar', goal:6500, actual:6210 },
+    { m:'Apr', goal:7000, actual:7450 },
+    { m:'May', goal:7000, actual:6980 },
+    { m:'Jun', goal:7500, actual:5840, current:true },
+    { m:'Jul', goal:8500 },
+    { m:'Aug', goal:8500 },
+    { m:'Sep', goal:8000 },
+    { m:'Oct', goal:8000 },
+    { m:'Nov', goal:7000 },
+    { m:'Dec', goal:6000 },
+  ];
+
+  ACCENT = '#FF6A1A';
+  CLAY = '#E0764E';
+
+  fmt(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  tier(key) { return this.TIERS.find(t => t.key === key); }
+  rate() { const r = this.props.mileageRate; return (typeof r === 'number' && r > 0) ? r : 0.67; }
+  profit(j) { return j.revenue - j.materials - j.labor - j.miles * this.rate(); }
+
+  jobView(j) {
+    const t = this.tier(j.tier);
+    const p = this.profit(j);
+    const delta = p - t.target;
+    const cleared = delta >= 0;
+    const color = cleared ? this.ACCENT : this.CLAY;
+    return {
+      id: j.id, name: j.name, sub: j.sub, date: j.date,
+      tierLabel: t.label, targetFmt: this.fmt(t.target),
+      profitFmt: this.fmt(p),
+      cleared,
+      stamp: (cleared ? '✓ ' : '✗ ') + (cleared ? '+' : '−') + this.fmt(Math.abs(delta)),
+      resultColor: color,
+      resultBg: cleared ? 'rgba(255,106,26,0.12)' : 'rgba(224,118,78,0.1)',
+      resultBd: cleared ? 'rgba(255,106,26,0.32)' : 'rgba(224,118,78,0.32)',
+      onOpen: () => this.setState({ view: 'app', screen: 'job', jobId: j.id, dayType: null }),
+    };
+  }
+
+  monthData() {
+    const goal = 7500, earned = 5840, daysEl = 22, daysTot = 30;
+    const pacePct = daysEl / daysTot;          // 0.733
+    const paceDollars = goal * pacePct;        // 5500
+    const delta = earned - paceDollars;        // +340
+    return {
+      goalFmt: this.fmt(goal), earnedFmt: this.fmt(earned),
+      pct: Math.round((earned / goal) * 100),
+      paceTick: Math.round(pacePct * 100),
+      deltaFmt: (delta >= 0 ? '+' : '−') + this.fmt(Math.abs(delta)),
+      jobCount: 11,
+      clearedCount: this.JOBS.filter(j => this.profit(j) >= this.tier(j.tier).target).length + 4,
+    };
+  }
+
+  yearData() {
+    const annual = this.GOALS.reduce((s, g) => s + g.goal, 0); // 86000
+    const ytd = this.GOALS.filter(g => g.actual != null).reduce((s, g) => s + g.actual, 0); // 38640
+    const completedGoals = this.GOALS.filter(g => g.actual != null && !g.current).reduce((s,g)=>s+g.goal,0); // Jan-May
+    const pace = completedGoals + 7500 * (22/30); // 38000
+    const delta = ytd - pace; // +640
+    return {
+      annualFmt: this.fmt(annual), ytdFmt: this.fmt(ytd),
+      pct: Math.round((ytd / annual) * 100),
+      paceTick: Math.round((pace / annual) * 100),
+      statusLabel: (delta >= 0 ? 'Ahead of pace · +' : 'Behind pace · −') + this.fmt(Math.abs(delta)),
+    };
+  }
+
+  detailData() {
+    const j = this.JOBS.find(x => x.id === this.state.jobId) || this.JOBS[0];
+    const selKey = this.state.dayType || j.tier;
+    const t = this.tier(selKey);
+    const p = this.profit(j);
+    const delta = p - t.target;
+    const cleared = delta >= 0;
+    const color = cleared ? this.ACCENT : this.CLAY;
+    const mileCost = j.miles * this.rate();
+    const ledger = [
+      { label: 'Revenue', val: this.fmt(j.revenue), color: '#F2EDE4' },
+      { label: 'Materials', val: '−' + this.fmt(j.materials), color: this.CLAY },
+      { label: 'Labor / helper', val: '−' + this.fmt(j.labor), color: this.CLAY },
+      { label: 'Mileage · ' + j.miles + ' mi', val: '−' + this.fmt(mileCost), color: this.CLAY },
+    ];
+    const tiers = this.TIERS.map(tt => {
+      const sel = tt.key === selKey;
+      return {
+        key: tt.key, label: tt.label, targetFmt: this.fmt(tt.target),
+        bg: sel ? 'rgba(255,106,26,0.12)' : '#13110F',
+        bd: sel ? this.ACCENT : 'rgba(255,255,255,0.08)',
+        labelColor: sel ? this.ACCENT : '#9A9183',
+        valColor: sel ? '#F2EDE4' : '#B6AD9D',
+        onSelect: () => this.setState({ dayType: tt.key }),
+      };
+    });
+    return {
+      name: j.name, sub: j.sub, date: j.date,
+      tiers, ledger,
+      profitFmt: this.fmt(p),
+      resultColor: color,
+      resultBg: cleared ? 'rgba(255,106,26,0.1)' : 'rgba(224,118,78,0.1)',
+      resultBd: cleared ? 'rgba(255,106,26,0.3)' : 'rgba(224,118,78,0.3)',
+      resultHeadline: cleared ? '✓ Cleared the ' + t.label.toLowerCase() + ' rate' : '✗ Under the ' + t.label.toLowerCase() + ' rate',
+      deltaFmt: (cleared ? '+' : '−') + this.fmt(Math.abs(delta)),
+      resultNote: cleared
+        ? 'Gross profit beat your ' + this.fmt(t.target) + ' target. Priced right.'
+        : 'Short of your ' + this.fmt(t.target) + ' target — quote higher or trim costs next time.',
+    };
+  }
+
+  goalsView() {
+    return this.GOALS.map(g => {
+      const future = g.actual == null;
+      const met = !future && g.actual >= g.goal;
+      const barColor = future ? 'rgba(255,255,255,0.12)' : (met ? this.ACCENT : this.CLAY);
+      return {
+        m: g.m,
+        goalFmt: '$' + Math.round(g.goal / 1000) + 'k',
+        actualFmt: future ? '—' : this.fmt(g.actual),
+        pct: future ? 0 : Math.min(100, Math.round((g.actual / g.goal) * 100)),
+        tag: g.current ? 'now' : (future ? '' : (met ? '✓' : '✗')),
+        cardBg: g.current ? 'rgba(255,106,26,0.08)' : (future ? '#15130F' : '#1A1814'),
+        cardBd: g.current ? this.ACCENT : 'rgba(255,255,255,0.07)',
+        monColor: g.current ? this.ACCENT : (future ? '#6E665A' : '#F2EDE4'),
+        actualColor: future ? '#6E665A' : '#F2EDE4',
+        dotColor: met ? this.ACCENT : (future ? '#6E665A' : this.CLAY),
+        barColor,
+      };
+    });
+  }
+
+  renderVals() {
+    const view = this.state.view;
+    const screen = this.state.screen;
+    const accent = this.props.accentColor || this.ACCENT;
+    const isApp = view === 'app';
+    const navColor = (s) => (isApp && screen === s) ? 'var(--accent,#FF6A1A)' : '#6E665A';
+    return {
+      accent,
+      isLanding: view === 'landing',
+      isApp,
+      isDash: screen === 'dashboard',
+      isJobs: screen === 'jobs',
+      isJob: screen === 'job',
+      isGoals: screen === 'goals',
+      goLanding: () => this.setState({ view: 'landing' }),
+      goApp: () => this.setState({ view: 'app', screen: 'dashboard' }),
+      goDash: () => this.setState({ view: 'app', screen: 'dashboard' }),
+      goJobs: () => this.setState({ view: 'app', screen: 'jobs' }),
+      goGoals: () => this.setState({ view: 'app', screen: 'goals' }),
+      landingBg: view === 'landing' ? 'var(--accent,#FF6A1A)' : 'transparent',
+      landingFg: view === 'landing' ? '#1A0E04' : '#9A9183',
+      appBg: isApp ? 'var(--accent,#FF6A1A)' : 'transparent',
+      appFg: isApp ? '#1A0E04' : '#9A9183',
+      navDash: navColor('dashboard'),
+      navJobs: (isApp && (screen === 'jobs' || screen === 'job')) ? 'var(--accent,#FF6A1A)' : '#6E665A',
+      navGoals: navColor('goals'),
+      recentJobs: this.JOBS.slice(0, 3).map(j => this.jobView(j)),
+      allJobs: this.JOBS.map(j => this.jobView(j)),
+      detail: this.detailData(),
+      month: this.monthData(),
+      year: this.yearData(),
+      goals: this.goalsView(),
+    };
+  }
+}
+</script>
+</body>
+</html>
