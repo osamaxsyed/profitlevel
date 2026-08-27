@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getUserId } from '@/lib/auth';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
                  FROM sub_payouts sp
                  INNER JOIN jobs j ON sp.job_id = j.id
                  LEFT JOIN subs s ON sp.sub_id = s.id
-                 WHERE j.user_id = ?${jobId ? ' AND sp.job_id = ?' : ''}
+                 WHERE j.user_id = ?${jobId ? ' AND sp.job_id = ?' : ledgerVisible()}
                  ORDER BY sp.created_at DESC`;
 
     const result = await db.execute({

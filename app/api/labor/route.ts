@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Labor } from '@/lib/types';
 import { getUserId } from '@/lib/auth';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 export async function GET(request: Request) {
   try {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
       result = await db.execute({
         sql: `SELECT l.* FROM labor l
               INNER JOIN jobs j ON l.job_id = j.id
-              WHERE j.user_id = ?
+              WHERE j.user_id = ?${ledgerVisible()}
               ORDER BY l.created_at DESC`,
         args: [userId]
       });

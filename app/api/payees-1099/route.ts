@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Payee1099 } from '@/lib/types';
 import { getUserId } from '@/lib/auth';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 // A payee crossing $2,000 in a year needs a 1099-NEC.
 const THRESHOLD_1099 = 2000;
@@ -28,7 +29,7 @@ export async function GET() {
                      'labor' AS source
               FROM labor l
               INNER JOIN jobs j ON l.job_id = j.id
-              WHERE j.user_id = ?
+              WHERE j.user_id = ?${ledgerVisible()}
               UNION ALL
               SELECT s.name AS name,
                      strftime('%Y', COALESCE(sp.paid_date, sp.created_at)) AS yr,
@@ -37,7 +38,7 @@ export async function GET() {
               FROM sub_payouts sp
               INNER JOIN jobs j ON sp.job_id = j.id
               LEFT JOIN subs s ON sp.sub_id = s.id
-              WHERE j.user_id = ?
+              WHERE j.user_id = ?${ledgerVisible()}
             )
             WHERE name IS NOT NULL AND yr IS NOT NULL
             GROUP BY name, yr

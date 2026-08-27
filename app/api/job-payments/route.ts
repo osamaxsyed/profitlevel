@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { JobPayment } from '@/lib/types';
 import { getUserId } from '@/lib/auth';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
     const sql = `SELECT p.*
                  FROM job_payments p
                  INNER JOIN jobs j ON p.job_id = j.id
-                 WHERE j.user_id = ?${jobId ? ' AND p.job_id = ?' : ''}
+                 WHERE j.user_id = ?${jobId ? ' AND p.job_id = ?' : ledgerVisible()}
                  ORDER BY COALESCE(p.paid_date, p.created_at) DESC, p.id DESC`;
 
     const result = await db.execute({

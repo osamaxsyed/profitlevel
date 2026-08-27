@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getUserId } from '@/lib/auth';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 // GET /api/monthly-goals?year=2026
 // Returns the 12 months' goals for the year (0 if unset), the actual gross per
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
             - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
           ) AS gross
         FROM jobs j
-        WHERE j.user_id = ? AND strftime('%Y', j.job_date) = ?
+        WHERE j.user_id = ? AND strftime('%Y', j.job_date) = ?${ledgerVisible()}
         GROUP BY month`,
       args: [userId, String(year)],
     });
