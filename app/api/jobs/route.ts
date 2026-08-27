@@ -3,6 +3,8 @@ import db from '@/lib/db';
 import type { Job, JobWithCosts } from '@/lib/types';
 import { getUserId } from '@/lib/auth';
 import { parseTargets, parseDayUnits, evaluateJob } from '@/lib/dayRate';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
+import { resolveContactId, toE164 } from '@/lib/resolveContact';
 
 export async function GET(request: Request) {
   try {
@@ -73,7 +75,7 @@ export async function GET(request: Request) {
         FROM job_payments
         GROUP BY job_id
       ) pay ON j.id = pay.job_id
-      WHERE j.user_id = ?
+      WHERE j.user_id = ?${ledgerVisible()}
     `;
 
     const args = [userId];
@@ -100,7 +102,7 @@ export async function GET(request: Request) {
             FROM sub_payouts sp
             INNER JOIN jobs j ON sp.job_id = j.id
             LEFT JOIN subs s ON sp.sub_id = s.id
-            WHERE j.user_id = ?
+            WHERE j.user_id = ?${ledgerVisible()}
             ORDER BY sp.id`,
       args: [userId],
     });
@@ -166,7 +168,7 @@ export async function POST(request: Request) {
   try {
     const userId = await getUserId();
     const body = await request.json();
-    const { name, client_name, contract_price, job_date, day_units, paid_via, paid_date } = body;
+    const { name, client_name, contract_price, job_date, day_units, paid_via, paid_date, phone, stage: stageIn } = body;
 
     if (!name || contract_price === undefined || !job_date) {
       return NextResponse.json(
@@ -179,14 +181,39 @@ export async function POST(request: Request) {
     const dayUnitsValue =
       day_units == null ? null : typeof day_units === 'string' ? day_units : JSON.stringify(day_units);
 
+    // Jobs migration (2026-08-27): a job typed in here is a real, sold job, so it
+    // is born ledger-visible. `Won` by default; `Done` when the form says the work
+    // is finished (explicit stage, or a paid_via/paid_date that says it settled).
+    const requested = String(stageIn ?? '').trim();
+    const looksDone = requested === 'Done' || (!requested && (!!paid_via || !!paid_date));
+    const stage = requested === 'Won' || requested === 'Scheduled' || requested === 'Done'
+      ? requested
+      : looksDone ? 'Done' : 'Won';
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const now = new Date().toISOString();
+    const contactId = await resolveContactId(client_name, phone);
+
     const result = await db.execute({
-      sql: 'INSERT INTO jobs (name, client_name, contract_price, job_date, day_units, paid_via, paid_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      args: [name, client_name || null, contract_price, job_date, dayUnitsValue, paid_via || null, paid_date || null, userId],
+      sql: `INSERT INTO jobs
+              (name, client_name, contract_price, job_date, day_units, paid_via, paid_date, user_id,
+               stage, date_in, source, contact_id, phone, closed_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ProfitLevel', ?, ?, ?, ?)`,
+      args: [
+        name, client_name || null, contract_price, job_date, dayUnitsValue, paid_via || null, paid_date || null, userId,
+        stage, today, contactId, toE164(phone), stage === 'Done' ? now : null, now,
+      ],
+    });
+
+    const jobId = Number(result.lastInsertRowid);
+    // Every stage change by anyone appends an event (spec, job_events).
+    await db.execute({
+      sql: 'INSERT INTO job_events (job_id, stage, at, source, note) VALUES (?, ?, ?, ?, ?)',
+      args: [jobId, stage, now, 'profitlevel', 'created in ProfitLevel'],
     });
 
     const newJobResult = await db.execute({
       sql: 'SELECT * FROM jobs WHERE id = ?',
-      args: [Number(result.lastInsertRowid)],
+      args: [jobId],
     });
 
     return NextResponse.json(newJobResult.rows[0], { status: 201 });

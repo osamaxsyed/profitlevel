@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { Mileage } from '@/lib/types';
 import { getUserId } from '@/lib/auth';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 export async function GET(request: Request) {
   try {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
       result = await db.execute({
         sql: `SELECT m.* FROM mileage m
               INNER JOIN jobs j ON m.job_id = j.id
-              WHERE j.user_id = ?
+              WHERE j.user_id = ?${ledgerVisible()}
               ORDER BY m.created_at DESC`,
         args: [userId]
       });

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getUserId } from '@/lib/auth';
 import { parseTargets, parseDayUnits, evaluateJob, dayCount, TIER_ORDER, type DayTier } from '@/lib/dayRate';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 export async function GET(request: Request) {
   try {
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
         FROM hours_log
         GROUP BY job_id
       ) hl ON j.id = hl.job_id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
 
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
       sql: `SELECT COALESCE(SUM(m.cost + m.tax), 0) as total
       FROM materials m
       INNER JOIN jobs j ON m.job_id = j.id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
 
@@ -49,7 +50,7 @@ export async function GET(request: Request) {
       sql: `SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) as total
       FROM labor l
       INNER JOIN jobs j ON l.job_id = j.id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
 
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
       sql: `SELECT COALESCE(SUM(m.miles * m.rate), 0) as total
       FROM mileage m
       INNER JOIN jobs j ON m.job_id = j.id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
 
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
       sql: `SELECT COALESCE(SUM(sp.payout), 0) as total
       FROM sub_payouts sp
       INNER JOIN jobs j ON sp.job_id = j.id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
 
@@ -94,7 +95,7 @@ export async function GET(request: Request) {
       LEFT JOIN (
         SELECT job_id, SUM(amount) as total FROM job_payments GROUP BY job_id
       ) pay ON j.id = pay.job_id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?`,
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
 
@@ -114,7 +115,7 @@ export async function GET(request: Request) {
       LEFT JOIN (
         SELECT job_id, SUM(hours) as total_hours FROM hours_log GROUP BY job_id
       ) hl ON j.id = hl.job_id
-      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?
+      WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}
         AND NOT EXISTS (SELECT 1 FROM sub_payouts sp WHERE sp.job_id = j.id)`,
       args: [userId, month]
     });
@@ -158,7 +159,7 @@ export async function GET(request: Request) {
             - COALESCE((SELECT SUM(payout) FROM sub_payouts WHERE job_id = j.id), 0)
           AS gross_profit
         FROM jobs j
-        WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?
+        WHERE j.user_id = ?${ledgerVisible()} AND strftime('%Y-%m', j.job_date) = ?
         ORDER BY j.job_date`,
       args: [userId, month],
     });

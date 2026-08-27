@@ -12,12 +12,38 @@ export async function DELETE(
 
     // Verify ownership
     const job = await db.execute({
-      sql: 'SELECT user_id FROM jobs WHERE id = ?',
+      sql: 'SELECT user_id, crm_id FROM jobs WHERE id = ?',
       args: [id],
     });
 
     if (job.rows.length === 0 || (job.rows[0] as any).user_id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Jobs migration (2026-08-27): a job row is also the CRM thread — it can own
+    // calendar events, messages, tasks and stage history that a hard DELETE would
+    // orphan. Rule 2 says the way to remove a job from view is an off-ramp stage
+    // (Lost / Duplicate / Spam), not a delete. So a job with a CRM life is refused;
+    // a plain hand-typed cash job with nothing hanging off it still deletes.
+    const linked = await db.execute({
+      sql: `SELECT
+              (SELECT COUNT(*) FROM dispatch    WHERE job_id = ?) AS events,
+              (SELECT COUNT(*) FROM job_events  WHERE job_id = ?) AS history,
+              (SELECT COUNT(*) FROM messages    WHERE job_id = ?) AS msgs,
+              (SELECT COUNT(*) FROM tasks       WHERE job_id = ?) AS tasks`,
+      args: [id, id, id, id],
+    });
+    const l = linked.rows[0] as unknown as { events: number; history: number; msgs: number; tasks: number };
+    const hasCrmLife = !!(job.rows[0] as any).crm_id || Number(l.events) > 0 || Number(l.msgs) > 0 || Number(l.tasks) > 0 || Number(l.history) > 0;
+
+    if (hasCrmLife) {
+      return NextResponse.json(
+        {
+          error:
+            'This job has calendar events, messages or history attached. Mark it Lost or Duplicate instead of deleting it.',
+        },
+        { status: 409 }
+      );
     }
 
     await db.execute({
@@ -61,8 +87,8 @@ export async function PATCH(
     const paidViaValue = 'paid_via' in body ? paid_via || null : undefined;
     const paidDateValue = 'paid_date' in body ? paid_date || null : undefined;
 
-    const sets = ['name = ?', 'client_name = ?', 'contract_price = ?', 'job_date = ?', 'day_units = ?'];
-    const updateArgs: any[] = [name, client_name || null, contract_price, job_date, dayUnitsValue];
+    const sets = ['name = ?', 'client_name = ?', 'contract_price = ?', 'job_date = ?', 'day_units = ?', 'updated_at = ?'];
+    const updateArgs: any[] = [name, client_name || null, contract_price, job_date, dayUnitsValue, new Date().toISOString()];
     if (paidViaValue !== undefined) {
       sets.push('paid_via = ?');
       updateArgs.push(paidViaValue);

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { sendWeeklySummary } from '@/lib/email';
 import db from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
+import { ledgerVisible } from '@/lib/ledgerVisibility';
 
 // This endpoint would be called by a cron job (e.g., Vercel Cron)
 export async function POST(request: Request) {
@@ -54,7 +55,7 @@ export async function GET() {
         FROM hours_log
         GROUP BY job_id
       ) hl ON j.id = hl.job_id
-      WHERE j.user_id = ? AND j.job_date >= ?`,
+      WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}`,
       args: [userId, dateStr]
     });
 
@@ -63,9 +64,9 @@ export async function GET() {
     // Get weekly expenses
     const expensesResult = await db.execute({
       sql: `SELECT
-        (SELECT COALESCE(SUM(m.cost + m.tax), 0) FROM materials m INNER JOIN jobs j ON m.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?) +
-        (SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) FROM labor l INNER JOIN jobs j ON l.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?) +
-        (SELECT COALESCE(SUM(m.miles * m.rate), 0) FROM mileage m INNER JOIN jobs j ON m.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?) as total_expenses`,
+        (SELECT COALESCE(SUM(m.cost + m.tax), 0) FROM materials m INNER JOIN jobs j ON m.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) +
+        (SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) FROM labor l INNER JOIN jobs j ON l.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) +
+        (SELECT COALESCE(SUM(m.miles * m.rate), 0) FROM mileage m INNER JOIN jobs j ON m.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) as total_expenses`,
       args: [userId, dateStr, userId, dateStr, userId, dateStr]
     });
 
