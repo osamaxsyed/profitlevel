@@ -284,7 +284,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
               <label className="flex items-center gap-2 text-white text-sm mb-2">
                 <input type="checkbox" checked={paidCash} onChange={(e) => setPaidCash(e.target.checked)} />
                 Paid in cash (otherwise this is the agreed amount; Zelle gets matched from the bank feed)
-              />
+              </label>
             </>
           )}
 
