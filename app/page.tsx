@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
-import type { JobWithCosts, Material, Labor, Mileage, HoursLog } from '@/lib/types';
+import type { JobWithCosts, Material, Mileage, HoursLog } from '@/lib/types';
 import MonthOverviewCard from './components/MonthOverview';
 import { getProfitColor, formatCurrency, formatHours, formatNumber } from '@/lib/utils';
 import AddExpenseModal from './components/AddExpenseModal';
@@ -11,11 +11,11 @@ import JobStampCard from './components/pl/JobStampCard';
 import BottomNav from './components/pl/BottomNav';
 import BusinessBand from './components/pl/BusinessBand';
 import JobPaymentsSection from './components/pl/JobPaymentsSection';
-import SubPayoutsSection from './components/pl/SubPayoutsSection';
-import { num, type JobDispatchFields, type JobPayment } from './components/pl/subTypes';
+import CrewPayoutsSection from './components/pl/CrewPayoutsSection';
+import { num, type JobDispatchFields, type JobPayment } from './components/pl/crewTypes';
 import { tierSummary, resultTokens, TIER_LABELS, TIER_ORDER, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
 
-// Jobs carry the dispatch/receivables fields added in the Aug 2026 rehaul.
+// Jobs carry the crew/receivables fields added in the Aug 2026 rehaul.
 // They're optional here so the page still renders against an older API.
 type DispatchJob = JobWithCosts & Partial<JobDispatchFields>;
 
@@ -77,12 +77,10 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddMaterial, setShowAddMaterial] = useState(false);
-  const [showAddLabor, setShowAddLabor] = useState(false);
   const [showAddMileage, setShowAddMileage] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
 
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [labor, setLabor] = useState<Labor[]>([]);
   const [mileage, setMileage] = useState<Mileage[]>([]);
   const [hoursLog, setHoursLog] = useState<HoursLog[]>([]);
   const [jobPayments, setJobPayments] = useState<JobPayment[]>([]);
@@ -90,25 +88,21 @@ export default function Home() {
   const [grossGoal, setGrossGoal] = useState(195);
   const [netGoal, setNetGoal] = useState(120);
   const [existingClients, setExistingClients] = useState<string[]>([]);
-  const [existingHelpers, setExistingHelpers] = useState<string[]>([]);
 
   // Form states
   const [newJob, setNewJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', day_tier: 'full', day_count: '1' });
   const [newMaterial, setNewMaterial] = useState({ item_name: '', cost: '', tax: '' });
-  const [newLabor, setNewLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
   const [newMileage, setNewMileage] = useState({ miles: '' });
   const [newHoursLog, setNewHoursLog] = useState({ log_date: '', hours: '', note: '' });
 
   // Edit states
   const [editingJob, setEditingJob] = useState<number | null>(null);
   const [editingMaterial, setEditingMaterial] = useState<number | null>(null);
-  const [editingLabor, setEditingLabor] = useState<number | null>(null);
   const [editingMileage, setEditingMileage] = useState<number | null>(null);
   const [editingHoursLog, setEditingHoursLog] = useState<number | null>(null);
 
   const [editJob, setEditJob] = useState({ name: '', client_name: '', contract_price: '', job_date: '', day_tier: 'full', day_count: '1' });
   const [editMaterial, setEditMaterial] = useState({ item_name: '', cost: '', tax: '' });
-  const [editLabor, setEditLabor] = useState({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
   const [editMileage, setEditMileage] = useState({ miles: '' });
   const [editHoursLog, setEditHoursLog] = useState({ log_date: '', hours: '', note: '' });
 
@@ -117,22 +111,10 @@ export default function Home() {
   const [showEditClientDropdown, setShowEditClientDropdown] = useState(false);
   const [filteredClients, setFilteredClients] = useState<string[]>([]);
 
-  // Helper dropdown states
-  const [showHelperDropdown, setShowHelperDropdown] = useState(false);
-  const [showEditHelperDropdown, setShowEditHelperDropdown] = useState(false);
-  const [filteredHelpers, setFilteredHelpers] = useState<string[]>([]);
-
   // Collapsible sections states with localStorage persistence
   const [showMaterialsList, setShowMaterialsList] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('showMaterialsList');
-      return saved ? JSON.parse(saved) : false;
-    }
-    return false;
-  });
-  const [showLaborList, setShowLaborList] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('showLaborList');
       return saved ? JSON.parse(saved) : false;
     }
     return false;
@@ -163,17 +145,12 @@ export default function Home() {
     fetchJobs();
     fetchGoals();
     fetchExistingClients();
-    fetchExistingHelpers();
   }, []);
 
   // Persist collapsible states to localStorage
   useEffect(() => {
     localStorage.setItem('showMaterialsList', JSON.stringify(showMaterialsList));
   }, [showMaterialsList]);
-
-  useEffect(() => {
-    localStorage.setItem('showLaborList', JSON.stringify(showLaborList));
-  }, [showLaborList]);
 
   useEffect(() => {
     localStorage.setItem('showMileageList', JSON.stringify(showMileageList));
@@ -214,27 +191,14 @@ export default function Home() {
     setExistingClients(uniqueClients.sort());
   };
 
-  const fetchExistingHelpers = async () => {
-    const res = await fetch('/api/labor');
-    const data = await res.json();
-    const uniqueHelpers = Array.from(new Set(
-      data
-        .map((labor: Labor) => labor.helper_name)
-        .filter((name: string | null) => name && name.trim() !== '')
-    )) as string[];
-    setExistingHelpers(uniqueHelpers.sort());
-  };
-
   const fetchJobDetails = async (jobId: number) => {
-    const [materialsRes, laborRes, mileageRes, hoursLogRes, paymentsRes] = await Promise.all([
+    const [materialsRes, mileageRes, hoursLogRes, paymentsRes] = await Promise.all([
       fetch(`/api/materials?job_id=${jobId}`),
-      fetch(`/api/labor?job_id=${jobId}`),
       fetch(`/api/mileage?job_id=${jobId}`),
       fetch(`/api/hours-log?job_id=${jobId}`),
       fetch(`/api/job-payments?job_id=${jobId}`).catch(() => null),
     ]);
     setMaterials(await materialsRes.json());
-    setLabor(await laborRes.json());
     setMileage(await mileageRes.json());
     setHoursLog(await hoursLogRes.json());
     if (paymentsRes && paymentsRes.ok) {
@@ -243,7 +207,6 @@ export default function Home() {
     } else {
       setJobPayments([]);
     }
-    fetchExistingHelpers();
   };
 
   const validateJobForm = () => {
@@ -294,16 +257,16 @@ export default function Home() {
       hours_logged: 0,
       created_at: new Date().toISOString(),
       materials_total: 0,
-      labor_total: 0,
       mileage_total: 0,
       gross_profit: parseFloat(newJob.contract_price),
       gross_hourly_rate: null,
-      sub_payout_total: 0,
-      sub_payouts: [],
+      crew_cost: 0,
+      crew_planned: 0,
+      payouts: [],
       amount_paid: 0,
       outstanding: parseFloat(newJob.contract_price),
       cash_position: 0,
-      is_subbed: false,
+      has_crew: false,
       paid_status: 'unpaid',
     };
     setJobs([tempJob, ...jobs]);
@@ -403,58 +366,6 @@ export default function Home() {
 
     // Actual API call
     await fetch(`/api/materials/${id}`, { method: 'DELETE' });
-    fetchJobs();
-    if (selectedJob) fetchJobDetails(selectedJob);
-  };
-
-  const addLabor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch('/api/labor', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        job_id: selectedJob,
-        helper_name: newLabor.helper_name,
-        hours: newLabor.is_flat_rate ? 0 : parseFloat(newLabor.hours),
-        rate: parseFloat(newLabor.rate),
-        is_flat_rate: newLabor.is_flat_rate,
-        paid: 'agreed',
-      }),
-    });
-    setNewLabor({ helper_name: '', hours: '', rate: '', is_flat_rate: false });
-    setShowAddLabor(false);
-    setShowLaborList(true); // Keep section expanded after adding
-    fetchJobs();
-    if (selectedJob) fetchJobDetails(selectedJob);
-  };
-
-  const updateLabor = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingLabor) return;
-
-    await fetch(`/api/labor/${editingLabor}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        helper_name: editLabor.helper_name,
-        hours: editLabor.is_flat_rate ? 0 : parseFloat(editLabor.hours),
-        rate: parseFloat(editLabor.rate),
-        is_flat_rate: editLabor.is_flat_rate,
-      }),
-    });
-    setEditingLabor(null);
-    fetchJobs();
-    if (selectedJob) fetchJobDetails(selectedJob);
-  };
-
-  const deleteLabor = async (id: number) => {
-    if (!confirm('Delete this labor entry?')) return;
-
-    // Optimistic update - remove labor immediately
-    setLabor(labor.filter(l => l.id !== id));
-
-    // Actual API call
-    await fetch(`/api/labor/${id}`, { method: 'DELETE' });
     fetchJobs();
     if (selectedJob) fetchJobDetails(selectedJob);
   };
@@ -579,16 +490,6 @@ export default function Home() {
     setEditingMaterial(mat.id);
   };
 
-  const startEditLabor = (lab: Labor) => {
-    setEditLabor({
-      helper_name: lab.helper_name,
-      hours: lab.hours.toString(),
-      rate: lab.rate.toString(),
-      is_flat_rate: lab.is_flat_rate === 1,
-    });
-    setEditingLabor(lab.id);
-  };
-
   const startEditMileage = (mil: Mileage) => {
     setEditMileage({
       miles: mil.miles.toString(),
@@ -634,44 +535,6 @@ export default function Home() {
     setFilteredClients([]);
   };
 
-  const handleHelperInput = (value: string, isEdit: boolean = false) => {
-    if (isEdit) {
-      setEditLabor({ ...editLabor, helper_name: value });
-    } else {
-      setNewLabor({ ...newLabor, helper_name: value });
-    }
-
-    if (value.trim() === '') {
-      setFilteredHelpers([]);
-      if (isEdit) {
-        setShowEditHelperDropdown(false);
-      } else {
-        setShowHelperDropdown(false);
-      }
-    } else {
-      const filtered = existingHelpers.filter(helper =>
-        helper.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredHelpers(filtered);
-      if (isEdit) {
-        setShowEditHelperDropdown(true);
-      } else {
-        setShowHelperDropdown(true);
-      }
-    }
-  };
-
-  const selectHelper = (helper: string, isEdit: boolean = false) => {
-    if (isEdit) {
-      setEditLabor({ ...editLabor, helper_name: helper });
-      setShowEditHelperDropdown(false);
-    } else {
-      setNewLabor({ ...newLabor, helper_name: helper });
-      setShowHelperDropdown(false);
-    }
-    setFilteredHelpers([]);
-  };
-
   // Keyboard navigation for dropdowns
   const handleDropdownKeyDown = (e: React.KeyboardEvent, items: string[], onSelect: (item: string) => void, onClose: () => void) => {
     if (e.key === 'Escape') {
@@ -701,7 +564,7 @@ export default function Home() {
   // Month label for the dashboard header
   const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const clearedCount = jobs.filter((j) => j.day_rate?.met).length;
-  const subbedCount = jobs.filter((j) => j.is_subbed).length;
+  const crewedCount = jobs.filter((j) => j.has_crew).length;
   const unpaidCount = jobs.filter((j) => j.paid_status && j.paid_status !== 'paid').length;
 
   return (
@@ -725,7 +588,7 @@ export default function Home() {
             <div className="pt-2 pb-4">
               <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>{monthLabel}</div>
               <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>
-                {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} · {subbedCount} subbed out
+                {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} · {crewedCount} with crew
               </div>
             </div>
 
@@ -766,7 +629,7 @@ export default function Home() {
                 <div className="font-extrabold" style={{ fontSize: 24, letterSpacing: '-0.01em' }}>Jobs</div>
                 <div className="text-pl-muted-2 mt-[2px]" style={{ fontSize: 13 }}>
                   {unpaidCount > 0
-                    ? `${unpaidCount} awaiting payment · ${subbedCount} subbed out`
+                    ? `${unpaidCount} awaiting payment · ${crewedCount} with crew`
                     : `${clearedCount} of ${jobs.length} cleared their tier`}
                 </div>
               </div>
@@ -920,7 +783,7 @@ export default function Home() {
                 </div>
               ) : (
                 filteredJobs.map((job) => (
-                  <JobStampCard key={job.id} job={job} showSub onOpen={() => setSelectedJob(job.id)} />
+                  <JobStampCard key={job.id} job={job} showClient onOpen={() => setSelectedJob(job.id)} />
                 ))
               )}
             </div>
@@ -1047,9 +910,8 @@ export default function Home() {
                       {[
                         { label: 'Revenue', val: formatCurrency(currentJob.contract_price), color: '#F2EDE4', neg: false },
                         { label: 'Materials', val: formatCurrency(currentJob.materials_total), color: PL_CLAY, neg: true },
-                        { label: 'Labor / helper', val: formatCurrency(currentJob.labor_total), color: PL_CLAY, neg: true },
-                        ...(num(currentJob.sub_payout_total) > 0
-                          ? [{ label: 'Sub payouts', val: formatCurrency(num(currentJob.sub_payout_total)), color: PL_CLAY, neg: true }]
+                        ...(num(currentJob.crew_cost) > 0
+                          ? [{ label: 'Crew', val: formatCurrency(num(currentJob.crew_cost)), color: PL_CLAY, neg: true }]
                           : []),
                         { label: 'Mileage', val: formatCurrency(currentJob.mileage_total), color: PL_CLAY, neg: true },
                       ].map((row) => (
@@ -1125,10 +987,11 @@ export default function Home() {
                 />
 
                 {/* Payouts out — what the subs were paid on this job */}
-                <SubPayoutsSection
+                <CrewPayoutsSection
                   jobId={currentJob.id}
-                  payouts={currentJob.sub_payouts ?? []}
-                  total={num(currentJob.sub_payout_total)}
+                  payouts={currentJob.payouts ?? []}
+                  total={num(currentJob.crew_cost)}
+                  planned={num(currentJob.crew_planned)}
                   onChange={() => {
                     fetchJobs();
                     fetchJobDetails(currentJob.id);
@@ -1272,269 +1135,6 @@ export default function Home() {
                               </button>
                               <button
                                 onClick={() => deleteMaterial(m.id)}
-                                className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
-                              >
-                                Del
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                  </>
-                  )}
-                  </div>
-                </div>
-
-                {/* Labor Section */}
-                <div className="mb-6">
-                  <div className="bg-medium-gray p-4 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2 flex-1">
-                        <button
-                          onClick={() => setShowLaborList(!showLaborList)}
-                          className="text-white"
-                        >
-                          <svg
-                            className={`w-5 h-5 transition-transform ${showLaborList ? 'rotate-90' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                        <h3 className="text-lg font-bold text-white">Labor</h3>
-                        <span className="text-safety-orange font-semibold ml-2">
-                          {formatCurrency(currentJob.labor_total)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setShowAddLabor(true);
-                          setShowLaborList(true);
-                        }}
-                        className="bg-safety-orange text-white px-3 py-1 rounded text-sm font-semibold"
-                      >
-                        + Add
-                      </button>
-                    </div>
-
-                  {showLaborList && (
-                    <>
-                      {showAddLabor && (
-                        <form onSubmit={addLabor} className="bg-light-gray p-4 rounded-lg mb-2 mt-2">
-                      <div className="relative mb-2">
-                        <input
-                          type="text"
-                          placeholder="Helper Name"
-                          value={newLabor.helper_name}
-                          onChange={(e) => handleHelperInput(e.target.value, false)}
-                          onFocus={() => {
-                            if (newLabor.helper_name.trim() !== '') {
-                              const filtered = existingHelpers.filter(helper =>
-                                helper.toLowerCase().includes(newLabor.helper_name.toLowerCase())
-                              );
-                              setFilteredHelpers(filtered);
-                              setShowHelperDropdown(true);
-                            }
-                          }}
-                          className="w-full bg-dark-gray text-white px-3 py-2 rounded"
-                          required
-                        />
-                        {showHelperDropdown && filteredHelpers.length > 0 && (
-                          <div className="absolute z-10 w-full bg-medium-gray border border-light-gray rounded mt-1 max-h-40 overflow-y-auto">
-                            {filteredHelpers.map((helper) => (
-                              <div
-                                key={helper}
-                                onClick={() => selectHelper(helper, false)}
-                                className="px-3 py-2 text-white hover:bg-light-gray cursor-pointer"
-                              >
-                                {helper}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="text-white text-sm font-semibold mb-2 block">Rate Type</label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center cursor-pointer">
-                            <input
-                              type="radio"
-                              name="rate_type"
-                              checked={!newLabor.is_flat_rate}
-                              onChange={() => setNewLabor({ ...newLabor, is_flat_rate: false })}
-                              className="mr-2"
-                            />
-                            <span className="text-white">Hourly</span>
-                          </label>
-                          <label className="flex items-center cursor-pointer">
-                            <input
-                              type="radio"
-                              name="rate_type"
-                              checked={newLabor.is_flat_rate}
-                              onChange={() => setNewLabor({ ...newLabor, is_flat_rate: true })}
-                              className="mr-2"
-                            />
-                            <span className="text-white">Flat Rate</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {!newLabor.is_flat_rate && (
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="Hours"
-                          value={newLabor.hours}
-                          onChange={(e) => setNewLabor({ ...newLabor, hours: e.target.value })}
-                          className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
-                          required
-                        />
-                      )}
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder={newLabor.is_flat_rate ? "Flat Rate ($)" : "Rate ($/hr)"}
-                        value={newLabor.rate}
-                        onChange={(e) => setNewLabor({ ...newLabor, rate: e.target.value })}
-                        className="w-full bg-dark-gray text-white px-3 py-2 rounded mb-2"
-                        required
-                      />
-                      <div className="flex gap-2">
-                        <button type="submit" className="flex-1 bg-safety-orange text-white py-2 rounded font-semibold">
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddLabor(false)}
-                          className="flex-1 bg-light-gray text-white py-2 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  )}
-
-                  <div className="space-y-2">
-                    {labor.map((l) => (
-                      editingLabor === l.id ? (
-                        <form key={l.id} onSubmit={updateLabor} className="bg-medium-gray p-3 rounded">
-                          <div className="relative mb-1">
-                            <input
-                              type="text"
-                              value={editLabor.helper_name}
-                              onChange={(e) => handleHelperInput(e.target.value, true)}
-                              onFocus={() => {
-                                if (editLabor.helper_name.trim() !== '') {
-                                  const filtered = existingHelpers.filter(helper =>
-                                    helper.toLowerCase().includes(editLabor.helper_name.toLowerCase())
-                                  );
-                                  setFilteredHelpers(filtered);
-                                  setShowEditHelperDropdown(true);
-                                }
-                              }}
-                              className="w-full bg-light-gray text-white px-2 py-1 rounded text-sm"
-                              required
-                            />
-                            {showEditHelperDropdown && filteredHelpers.length > 0 && (
-                              <div className="absolute z-10 w-full bg-medium-gray border border-light-gray rounded mt-1 max-h-40 overflow-y-auto">
-                                {filteredHelpers.map((helper) => (
-                                  <div
-                                    key={helper}
-                                    onClick={() => selectHelper(helper, true)}
-                                    className="px-3 py-2 text-white hover:bg-light-gray cursor-pointer text-sm"
-                                  >
-                                    {helper}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="mb-2">
-                            <label className="text-white text-xs font-semibold mb-1 block">Rate Type</label>
-                            <div className="flex gap-3">
-                              <label className="flex items-center cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name="edit_rate_type"
-                                  checked={!editLabor.is_flat_rate}
-                                  onChange={() => setEditLabor({ ...editLabor, is_flat_rate: false })}
-                                  className="mr-1"
-                                />
-                                <span className="text-white text-xs">Hourly</span>
-                              </label>
-                              <label className="flex items-center cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name="edit_rate_type"
-                                  checked={editLabor.is_flat_rate}
-                                  onChange={() => setEditLabor({ ...editLabor, is_flat_rate: true })}
-                                  className="mr-1"
-                                />
-                                <span className="text-white text-xs">Flat Rate</span>
-                              </label>
-                            </div>
-                          </div>
-
-                          {!editLabor.is_flat_rate && (
-                            <input
-                              type="number"
-                              step="0.01"
-                              placeholder="Hours"
-                              value={editLabor.hours}
-                              onChange={(e) => setEditLabor({ ...editLabor, hours: e.target.value })}
-                              className="w-full bg-light-gray text-white px-2 py-1 rounded mb-1 text-sm"
-                              required
-                            />
-                          )}
-                          <input
-                            type="number"
-                            step="0.01"
-                            placeholder={editLabor.is_flat_rate ? "Flat Rate ($)" : "Rate ($/hr)"}
-                            value={editLabor.rate}
-                            onChange={(e) => setEditLabor({ ...editLabor, rate: e.target.value })}
-                            className="w-full bg-light-gray text-white px-2 py-1 rounded mb-2 text-sm"
-                            required
-                          />
-                          <div className="flex gap-2">
-                            <button type="submit" className="flex-1 bg-safety-orange text-white py-1 rounded text-sm">
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingLabor(null)}
-                              className="flex-1 bg-light-gray text-white py-1 rounded text-sm"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <div key={l.id} className="bg-medium-gray p-3 rounded">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex justify-between text-white">
-                                <span>{l.helper_name}</span>
-                                <span>{formatCurrency(l.is_flat_rate ? l.rate : l.hours * l.rate)}</span>
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {l.is_flat_rate ? 'Flat Rate' : `${formatNumber(l.hours, 1)}h × ${formatCurrency(l.rate)}/hr`}
-                              </div>
-                            </div>
-                            <div className="flex gap-1 ml-2">
-                              <button
-                                onClick={() => startEditLabor(l)}
-                                className="text-safety-orange text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => deleteLabor(l.id)}
                                 className="text-red-500 text-sm px-3 py-2 hover:bg-light-gray rounded min-h-[44px] min-w-[44px] flex items-center justify-center"
                               >
                                 Del

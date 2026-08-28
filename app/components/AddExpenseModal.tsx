@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import type { Job } from '@/lib/types';
+import {
+  ROLE_OPTIONS,
+  STATUS_OPTIONS,
+  crewLabel,
+  type Crew,
+  type PayType,
+  type PayoutRole,
+  type PayoutStatus,
+} from './pl/crewTypes';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -9,7 +18,9 @@ interface AddExpenseModalProps {
   onSuccess: () => void;
 }
 
-type ExpenseType = 'material' | 'labor' | 'mileage' | 'overhead';
+type ExpenseType = 'material' | 'crew' | 'mileage' | 'overhead';
+
+const NEW_CREW = '__new__';
 
 export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalProps) {
   const [expenseType, setExpenseType] = useState<ExpenseType>('material');
@@ -21,8 +32,13 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
   const [materialCost, setMaterialCost] = useState('');
   const [materialTax, setMaterialTax] = useState('');
 
-  // Labor fields
-  const [helperName, setHelperName] = useState('');
+  // Crew payout fields — one entry for anyone you pay on a job.
+  const [crew, setCrew] = useState<Crew[]>([]);
+  const [crewId, setCrewId] = useState('');
+  const [crewName, setCrewName] = useState('');
+  const [role, setRole] = useState<PayoutRole | ''>('');
+  const [payType, setPayType] = useState<PayType>('flat');
+  const [payStatus, setPayStatus] = useState<PayoutStatus>('agreed');
   const [paidCash, setPaidCash] = useState(false);
   const [hours, setHours] = useState('');
   const [rate, setRate] = useState('');
@@ -39,6 +55,10 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
   useEffect(() => {
     if (isOpen) {
       fetchJobs();
+      fetch('/api/crew')
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d) => Array.isArray(d) && setCrew(d))
+        .catch(() => {});
     }
   }, [isOpen]);
 
@@ -55,7 +75,12 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
     setMaterialName('');
     setMaterialCost('');
     setMaterialTax('');
-    setHelperName('');
+    setCrewId('');
+    setCrewName('');
+    setRole('');
+    setPayType('flat');
+    setPayStatus('agreed');
+    setPaidCash(false);
     setHours('');
     setRate('');
     setMiles('');
@@ -99,18 +124,37 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
               tax: parseFloat(materialTax) || 0,
             }),
           });
-        } else if (expenseType === 'labor') {
-          await fetch('/api/labor', {
+        } else if (expenseType === 'crew') {
+          // Role is the one thing the books can't guess, so it's never defaulted.
+          if (!role) {
+            alert('Say whether they led the job or assisted');
+            return;
+          }
+          const addingNew = crewId === NEW_CREW;
+          if (!crewId || (addingNew && crewName.trim() === '')) {
+            alert('Pick who worked this job');
+            return;
+          }
+          const res = await fetch('/api/payouts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               job_id: parseInt(selectedJobId),
-              helper_name: helperName,
-              hours: parseFloat(hours),
-              rate: parseFloat(rate),
-              paid: paidCash ? 'cash' : 'agreed',
+              ...(addingNew ? { crew_name: crewName.trim() } : { crew_id: parseInt(crewId, 10) }),
+              role,
+              pay_type: payType,
+              hours: payType === 'hourly' ? parseFloat(hours) || 0 : null,
+              rate: parseFloat(rate) || 0,
+              status: paidCash ? 'paid' : payStatus,
+              paid_via: paidCash ? 'Cash' : null,
+              paid_date: paidCash ? new Date().toISOString().slice(0, 10) : null,
             }),
           });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || 'Failed to add crew payout');
+            return;
+          }
         } else if (expenseType === 'mileage') {
           await fetch('/api/mileage', {
             method: 'POST',
@@ -167,14 +211,14 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
               </button>
               <button
                 type="button"
-                onClick={() => setExpenseType('labor')}
+                onClick={() => setExpenseType('crew')}
                 className={`py-2 px-3 rounded font-semibold ${
-                  expenseType === 'labor'
+                  expenseType === 'crew'
                     ? 'bg-safety-orange text-white'
                     : 'bg-light-gray text-gray-400'
                 }`}
               >
-                👷 Labor
+                👷 Crew
               </button>
               <button
                 type="button"
@@ -252,38 +296,114 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
             </>
           )}
 
-          {/* Labor Fields */}
-          {expenseType === 'labor' && (
+          {/* Crew Payout Fields */}
+          {expenseType === 'crew' && (
             <>
-              <input
-                type="text"
-                placeholder="Helper/Sub Name"
-                value={helperName}
-                onChange={(e) => setHelperName(e.target.value)}
+              <select
+                value={crewId}
+                onChange={(e) => setCrewId(e.target.value)}
                 className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
                 required
-              />
-              <input
-                type="number"
-                step="0.1"
-                placeholder="Hours Worked"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
-                required
-              />
+              >
+                <option value="">Who worked this job?</option>
+                {crew.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {crewLabel(c.name, c.needs_name === 1)}
+                  </option>
+                ))}
+                <option value={NEW_CREW}>+ Someone new…</option>
+              </select>
+
+              {crewId === NEW_CREW && (
+                <input
+                  type="text"
+                  placeholder="Their name"
+                  value={crewName}
+                  onChange={(e) => setCrewName(e.target.value)}
+                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                  required
+                />
+              )}
+
+              {/* Role — required, never defaulted server-side. */}
+              <label className="text-sm text-gray-400 block mb-1">Their role on this job</label>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {ROLE_OPTIONS.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRole(r.value)}
+                    aria-pressed={role === r.value}
+                    className={`py-2 px-3 rounded font-semibold ${
+                      role === r.value ? 'bg-safety-orange text-white' : 'bg-light-gray text-gray-400'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {(['flat', 'hourly'] as PayType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setPayType(t)}
+                    aria-pressed={payType === t}
+                    className={`py-2 px-3 rounded font-semibold ${
+                      payType === t ? 'bg-safety-orange text-white' : 'bg-light-gray text-gray-400'
+                    }`}
+                  >
+                    {t === 'flat' ? 'Flat amount' : 'Hourly'}
+                  </button>
+                ))}
+              </div>
+
+              {payType === 'hourly' && (
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Hours Worked"
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                  className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
+                  required
+                />
+              )}
               <input
                 type="number"
                 step="0.01"
-                placeholder="Rate ($/hr)"
+                placeholder={payType === 'hourly' ? 'Rate ($/hr)' : 'Amount ($)'}
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
                 className="w-full bg-light-gray text-white px-3 py-2 rounded mb-2"
                 required
               />
+
+              <label className="text-sm text-gray-400 block mb-1">Where it stands</label>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {STATUS_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setPayStatus(s.value)}
+                    aria-pressed={payStatus === s.value}
+                    disabled={paidCash}
+                    className={`py-2 px-3 rounded font-semibold ${
+                      payStatus === s.value && !paidCash
+                        ? 'bg-safety-orange text-white'
+                        : 'bg-light-gray text-gray-400'
+                    }`}
+                    style={{ opacity: paidCash ? 0.5 : 1 }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
               <label className="flex items-center gap-2 text-white text-sm mb-2">
                 <input type="checkbox" checked={paidCash} onChange={(e) => setPaidCash(e.target.checked)} />
-                Paid in cash (otherwise this is the agreed amount; Zelle gets matched from the bank feed)
+                Paid in cash (Zelle and checks get matched from the bank feed instead)
               </label>
             </>
           )}

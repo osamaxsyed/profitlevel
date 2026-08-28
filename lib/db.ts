@@ -39,19 +39,6 @@ async function initializeDatabase() {
   `);
 
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS labor (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      job_id INTEGER NOT NULL,
-      helper_name TEXT NOT NULL,
-      hours REAL NOT NULL,
-      rate REAL NOT NULL,
-      is_flat_rate INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (job_id) REFERENCES jobs (id) ON DELETE CASCADE
-    );
-  `);
-
-  await db.execute(`
     CREATE TABLE IF NOT EXISTS mileage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       job_id INTEGER NOT NULL,
@@ -106,24 +93,53 @@ async function initializeDatabase() {
     );
   `);
 
-  // 1099 subcontractors the owner dispatches jobs to. Single-user app, so no user_id.
+  // Everyone the owner pays: a person, or a crew that works and gets paid as a
+  // unit. Single-user app, so no user_id. Replaced `subs` in the crew migration.
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS subs (
+    CREATE TABLE IF NOT EXISTS crew (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL, phone TEXT, w9_on_file INTEGER DEFAULT 0,
-      hic_number TEXT, hic_verified DATE, coi_gl_expiry DATE, wc_status TEXT,
-      notes TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+      name TEXT NOT NULL,
+      phone TEXT,
+      kind TEXT NOT NULL DEFAULT 'person',
+      default_pay TEXT,
+      default_rate REAL,
+      notes TEXT,
+      blocked INTEGER DEFAULT 0,
+      needs_name INTEGER DEFAULT 0,
+      w9_on_file INTEGER DEFAULT 0,
+      hic_number TEXT,
+      hic_verified DATE,
+      coi_gl_expiry DATE,
+      wc_status TEXT,
+      active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT);
   `);
 
-  // What was actually paid out to a sub for a job. A job with >= 1 row is "subbed out".
+  // Every payout on a job, replacing the old labor/sub_payouts split. `role`
+  // says whether they led the job or assisted; `amount` is always materialized
+  // (flat: amount = rate; hourly: amount = hours * rate) so readers just SUM it.
+  // `planned` rows are pencilled in and excluded from job cost.
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS sub_payouts (
+    CREATE TABLE IF NOT EXISTS payouts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      job_id INTEGER NOT NULL, sub_id INTEGER NOT NULL, payout REAL NOT NULL,
-      paid_via TEXT, paid_date DATE, notes TEXT,
+      job_id INTEGER NOT NULL,
+      crew_id INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      pay_type TEXT NOT NULL DEFAULT 'flat',
+      hours REAL,
+      rate REAL,
+      amount REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'planned',
+      source TEXT,
+      paid_via TEXT,
+      paid_date TEXT,
+      bank_tx_ids TEXT,
+      notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
-      FOREIGN KEY (sub_id) REFERENCES subs(id));
+      updated_at TEXT,
+      legacy_table TEXT,
+      legacy_id INTEGER);
   `);
 
   // Money actually collected from the client. Supports deposits / partial payments.
@@ -141,6 +157,55 @@ async function initializeDatabase() {
       key TEXT NOT NULL UNIQUE,
       value TEXT NOT NULL
     );
+  `);
+
+  // Reporting views over the crew ledger. Crew cost counts everything that is
+  // not merely `planned`; `sub_payout` stays as an alias so older callers that
+  // still ask for it get the same number, and helper_labor is now always 0.
+  await db.execute(`
+    CREATE VIEW IF NOT EXISTS v_job_margin AS
+     SELECT j.id, j.name, j.client_name, j.job_date, j.contract_price,
+       COALESCE(m.mat,0) AS materials,
+       COALESCE(pc.crew,0) AS crew_cost,
+       COALESCE(pc.crew,0) AS sub_payout,
+       0 AS helper_labor,
+       COALESCE(pp.planned,0) AS crew_planned,
+       ROUND(j.contract_price - COALESCE(m.mat,0) - COALESCE(pc.crew,0),2) AS margin,
+       ROUND(100.0*(j.contract_price - COALESCE(m.mat,0) - COALESCE(pc.crew,0))/NULLIF(j.contract_price,0),1) AS margin_pct
+     FROM jobs j
+     LEFT JOIN (SELECT job_id, SUM(cost+COALESCE(tax,0)) mat FROM materials GROUP BY job_id) m ON m.job_id=j.id
+     LEFT JOIN (SELECT job_id, SUM(amount) crew FROM payouts WHERE status <> 'planned' GROUP BY job_id) pc ON pc.job_id=j.id
+     LEFT JOIN (SELECT job_id, SUM(amount) planned FROM payouts WHERE status = 'planned' GROUP BY job_id) pp ON pp.job_id=j.id;
+  `);
+
+  await db.execute(`
+    CREATE VIEW IF NOT EXISTS v_job_cash AS
+     SELECT j.id, j.name, j.client_name, j.contract_price,
+       COALESCE(p.paid,0) AS collected,
+       CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price ELSE COALESCE(p.paid,0) END AS collected_effective,
+       j.contract_price - CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price ELSE COALESCE(p.paid,0) END AS outstanding,
+       ROUND(CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price ELSE COALESCE(p.paid,0) END
+         - COALESCE(m.mat,0) - COALESCE(pc.crew,0), 2) AS cash_position
+     FROM jobs j
+     LEFT JOIN (SELECT job_id, SUM(amount) paid FROM job_payments GROUP BY job_id) p ON p.job_id=j.id
+     LEFT JOIN (SELECT job_id, SUM(cost+COALESCE(tax,0)) mat FROM materials GROUP BY job_id) m ON m.job_id=j.id
+     LEFT JOIN (SELECT job_id, SUM(amount) crew FROM payouts WHERE status <> 'planned' GROUP BY job_id) pc ON pc.job_id=j.id;
+  `);
+
+  // Per-payee, per-year 1099 rollup. Planned money is not income to anyone.
+  await db.execute(`
+    CREATE VIEW IF NOT EXISTS v_payee_1099 AS
+     SELECT c.id AS crew_id, c.name, c.kind, c.needs_name,
+       strftime('%Y', COALESCE(p.paid_date, p.created_at)) AS yr,
+       ROUND(SUM(CASE WHEN p.status = 'paid' THEN p.amount ELSE 0 END),2) AS total_paid,
+       ROUND(SUM(CASE WHEN p.status = 'agreed' THEN p.amount ELSE 0 END),2) AS total_agreed,
+       COUNT(*) AS payments,
+       CASE WHEN SUM(CASE WHEN p.status = 'paid' THEN p.amount ELSE 0 END)
+         >= COALESCE((SELECT CAST(value AS REAL) FROM settings WHERE key='1099_threshold'), 2000)
+         THEN '1099-NEC REQUIRED' ELSE 'under threshold' END AS status
+     FROM payouts p JOIN crew c ON c.id = p.crew_id
+     WHERE p.status <> 'planned'
+     GROUP BY c.id, yr;
   `);
 
   // Insert default IRS rates if table is empty

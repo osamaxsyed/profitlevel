@@ -20,7 +20,7 @@ interface FinancialSummary {
   expenses: {
     bucket_a_direct: number;
     materials: number;
-    labor: number;
+    crew: number;
     bucket_b_variable: number;
     mileage: number;
     bucket_c_fixed: number;
@@ -29,7 +29,7 @@ interface FinancialSummary {
   net_profit: number;
   job_count: number;
   /* Added in the Aug 2026 dispatch rehaul */
-  total_sub_payouts?: number;
+  total_crew_cost?: number;
   total_outstanding?: number;
   owner_jobs?: { revenue: number; count: number };
   day_rate?: DayRate;
@@ -159,7 +159,7 @@ export default function FinancialsPage() {
                 </>
               ) : (
                 <div className="text-pl-muted mt-1" style={{ fontSize: 13 }}>
-                  Nothing you worked yourself this period — everything went out to subs.
+                  Nothing you worked yourself this period — the crew handled it all.
                 </div>
               )}
             </div>
@@ -170,9 +170,9 @@ export default function FinancialsPage() {
             <div className="font-bold uppercase text-pl-muted-2 mb-3" style={{ fontSize: 11, letterSpacing: '0.16em' }}>Where the money went</div>
             <div className="flex flex-col gap-2 pl-mono">
               {[
-                { label: 'Materials & labor', val: summary.expenses.bucket_a_direct, note: `Materials ${fmtMoney(summary.expenses.materials)} · Labor ${fmtMoney(summary.expenses.labor)}` },
-                ...((summary.total_sub_payouts ?? 0) > 0
-                  ? [{ label: 'Sub payouts', val: summary.total_sub_payouts ?? 0, note: '1099 crews you dispatched' }]
+                { label: 'Materials & crew', val: summary.expenses.bucket_a_direct, note: `Materials ${fmtMoney(summary.expenses.materials)} · Crew ${fmtMoney(summary.expenses.crew)}` },
+                ...((summary.total_crew_cost ?? 0) > 0
+                  ? [{ label: 'Crew payouts', val: summary.total_crew_cost ?? 0, note: 'everyone you paid on a job' }]
                   : []),
                 { label: 'Mileage', val: summary.expenses.bucket_b_variable, note: 'Variable — IRS standard rate' },
                 { label: 'Overhead', val: summary.expenses.bucket_c_fixed, note: 'Fixed — insurance, software, tools' },

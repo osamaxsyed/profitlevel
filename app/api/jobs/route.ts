@@ -23,38 +23,31 @@ export async function GET(request: Request) {
       SELECT
         j.*,
         COALESCE(mat.total, 0) as materials_total,
-        COALESCE(lab.total, 0) as labor_total,
         COALESCE(mil.total, 0) as mileage_total,
-        COALESCE(sp.total, 0) as sub_payout_total,
+        COALESCE(cw.total, 0) as crew_cost,
+        COALESCE(cw.planned, 0) as crew_planned,
         COALESCE(hl.total_hours, 0) as hours_logged,
         j.contract_price -
           COALESCE(mat.total, 0) -
-          COALESCE(lab.total, 0) -
           COALESCE(mil.total, 0) -
-          COALESCE(sp.total, 0) as gross_profit,
+          COALESCE(cw.total, 0) as gross_profit,
         CASE
           WHEN COALESCE(hl.total_hours, j.hours_spent, 0) > 0 THEN
-            (j.contract_price - COALESCE(mat.total, 0) - COALESCE(lab.total, 0) - COALESCE(mil.total, 0) - COALESCE(sp.total, 0)) / COALESCE(hl.total_hours, j.hours_spent)
+            (j.contract_price - COALESCE(mat.total, 0) - COALESCE(mil.total, 0) - COALESCE(cw.total, 0)) / COALESCE(hl.total_hours, j.hours_spent)
           ELSE NULL
         END as gross_hourly_rate,
         ${amountPaidExpr} as amount_paid,
         MAX(j.contract_price - (${amountPaidExpr}), 0) as outstanding,
         (${amountPaidExpr})
           - COALESCE(mat.total, 0)
-          - COALESCE(lab.total, 0)
-          - COALESCE(sp.total, 0) as cash_position,
-        CASE WHEN COALESCE(sp.cnt, 0) > 0 THEN 1 ELSE 0 END as is_subbed
+          - COALESCE(cw.total, 0) as cash_position,
+        CASE WHEN COALESCE(cw.cnt, 0) > 0 THEN 1 ELSE 0 END as has_crew
       FROM jobs j
       LEFT JOIN (
         SELECT job_id, SUM(cost + tax) as total
         FROM materials
         GROUP BY job_id
       ) mat ON j.id = mat.job_id
-      LEFT JOIN (
-        SELECT job_id, SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END) as total
-        FROM labor
-        GROUP BY job_id
-      ) lab ON j.id = lab.job_id
       LEFT JOIN (
         SELECT job_id, SUM(miles * rate) as total
         FROM mileage
@@ -66,10 +59,13 @@ export async function GET(request: Request) {
         GROUP BY job_id
       ) hl ON j.id = hl.job_id
       LEFT JOIN (
-        SELECT job_id, SUM(payout) as total, COUNT(*) as cnt
-        FROM sub_payouts
+        SELECT job_id,
+          SUM(CASE WHEN status <> 'planned' THEN amount ELSE 0 END) as total,
+          SUM(CASE WHEN status = 'planned' THEN amount ELSE 0 END) as planned,
+          COUNT(*) as cnt
+        FROM payouts
         GROUP BY job_id
-      ) sp ON j.id = sp.job_id
+      ) cw ON j.id = cw.job_id
       LEFT JOIN (
         SELECT job_id, SUM(amount) as total
         FROM job_payments
@@ -96,14 +92,16 @@ export async function GET(request: Request) {
     });
     const targets = parseTargets((targetsRow.rows[0] as { value?: string } | undefined)?.value);
 
-    // Per-job sub payout detail, fetched once for the whole result set.
+    // Per-job crew payout detail, fetched once for the whole result set.
     const payoutRowsResult = await db.execute({
-      sql: `SELECT sp.id, sp.job_id, sp.sub_id, s.name as sub_name, sp.payout, sp.paid_via, sp.paid_date
-            FROM sub_payouts sp
-            INNER JOIN jobs j ON sp.job_id = j.id
-            LEFT JOIN subs s ON sp.sub_id = s.id
+      sql: `SELECT p.id, p.job_id, p.crew_id, c.name as crew_name, c.kind as crew_kind,
+                   p.role, p.pay_type, p.hours, p.rate, p.amount, p.status,
+                   p.source, p.paid_via, p.paid_date, p.notes
+            FROM payouts p
+            INNER JOIN jobs j ON p.job_id = j.id
+            LEFT JOIN crew c ON p.crew_id = c.id
             WHERE j.user_id = ?${ledgerVisible()}
-            ORDER BY sp.id`,
+            ORDER BY p.id`,
       args: [userId],
     });
 
@@ -114,11 +112,20 @@ export async function GET(request: Request) {
       const list = payoutsByJob.get(jobId) ?? [];
       list.push({
         id: Number(r.id),
-        sub_id: Number(r.sub_id),
-        sub_name: r.sub_name ?? null,
-        payout: Number(r.payout ?? 0),
+        job_id: jobId,
+        crew_id: Number(r.crew_id),
+        crew_name: r.crew_name ?? null,
+        crew_kind: r.crew_kind ?? 'person',
+        role: r.role ?? null,
+        pay_type: r.pay_type ?? 'flat',
+        hours: r.hours == null ? null : Number(r.hours),
+        rate: r.rate == null ? null : Number(r.rate),
+        amount: Number(r.amount ?? 0),
+        status: r.status ?? 'planned',
+        source: r.source ?? null,
         paid_via: r.paid_via ?? null,
         paid_date: r.paid_date ?? null,
+        notes: r.notes ?? null,
       });
       payoutsByJob.set(jobId, list);
     }
@@ -147,12 +154,13 @@ export async function GET(request: Request) {
         ...r,
         day_units: units,
         day_rate: dayRate,
-        sub_payout_total: Number(r.sub_payout_total ?? 0),
-        sub_payouts: payoutsByJob.get(Number(r.id)) ?? [],
+        crew_cost: Number(r.crew_cost ?? 0),
+        crew_planned: Number(r.crew_planned ?? 0),
+        payouts: payoutsByJob.get(Number(r.id)) ?? [],
         amount_paid: amountPaid,
         outstanding,
         cash_position: Number(r.cash_position ?? 0),
-        is_subbed: Number(r.is_subbed ?? 0) === 1,
+        has_crew: Number(r.has_crew ?? 0) === 1,
         paid_status: paidStatus,
       };
     });

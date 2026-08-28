@@ -79,27 +79,6 @@ export async function GET(request: Request) {
 
     const materialsTotal = materialsTotalResult.rows[0] as unknown as { total: number };
 
-    // Calculate labor total with proper filtering and flat rate handling
-    let laborFilter = '';
-    let laborParams: any[] = [userId];
-    if (month) {
-      laborFilter = `AND strftime('%Y-%m', j.job_date) = ?`;
-      laborParams.push(month);
-    } else if (year) {
-      laborFilter = `AND strftime('%Y', j.job_date) = ?`;
-      laborParams.push(year);
-    }
-
-    const laborTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) as total
-      FROM labor l
-      INNER JOIN jobs j ON l.job_id = j.id
-      WHERE j.user_id = ?${ledgerVisible()} ${laborFilter}`,
-      args: laborParams
-    });
-
-    const laborTotal = laborTotalResult.rows[0] as unknown as { total: number };
-
     // Calculate mileage total with proper filtering
     let mileageFilter = '';
     let mileageParams: any[] = [userId];
@@ -121,27 +100,27 @@ export async function GET(request: Request) {
 
     const mileageTotal = mileageTotalResult.rows[0] as unknown as { total: number };
 
-    // Sub payouts for the period - the cost of dispatching work to 1099 subs.
-    // Without this, profit is overstated on every subbed-out job.
-    let subPayoutFilter = '';
-    let subPayoutParams: any[] = [userId];
+    // Crew cost for the period: everyone you paid on a job, led or assisted.
+    // `planned` rows are pencilled in, not owed, so they stay out of cost.
+    let crewFilter = '';
+    let crewParams: any[] = [userId];
     if (month) {
-      subPayoutFilter = `AND strftime('%Y-%m', j.job_date) = ?`;
-      subPayoutParams.push(month);
+      crewFilter = `AND strftime('%Y-%m', j.job_date) = ?`;
+      crewParams.push(month);
     } else if (year) {
-      subPayoutFilter = `AND strftime('%Y', j.job_date) = ?`;
-      subPayoutParams.push(year);
+      crewFilter = `AND strftime('%Y', j.job_date) = ?`;
+      crewParams.push(year);
     }
 
-    const subPayoutTotalResult = await db.execute({
-      sql: `SELECT COALESCE(SUM(sp.payout), 0) as total
-      FROM sub_payouts sp
-      INNER JOIN jobs j ON sp.job_id = j.id
-      WHERE j.user_id = ?${ledgerVisible()} ${subPayoutFilter}`,
-      args: subPayoutParams
+    const crewCostResult = await db.execute({
+      sql: `SELECT COALESCE(SUM(p.amount), 0) as total
+      FROM payouts p
+      INNER JOIN jobs j ON p.job_id = j.id
+      WHERE j.user_id = ?${ledgerVisible()} AND p.status <> 'planned' ${crewFilter}`,
+      args: crewParams
     });
 
-    const subPayoutTotal = subPayoutTotalResult.rows[0] as unknown as { total: number };
+    const crewCost = crewCostResult.rows[0] as unknown as { total: number };
 
     // Receivables: billed but not yet collected, over the same period.
     // Legacy jobs predate job_payments, so a paid_via with no payment rows means paid in full.
@@ -168,7 +147,7 @@ export async function GET(request: Request) {
       total_collected: number;
     };
 
-    // Owner-labor slice: jobs the owner worked himself (no sub payouts attached).
+    // Owner-labor slice: jobs the owner worked himself (nobody else paid on them).
     // Day-rate metrics only make sense over these.
     const ownerJobsResult = await db.execute({
       sql: `SELECT
@@ -180,7 +159,7 @@ export async function GET(request: Request) {
         SELECT job_id, SUM(hours) as total_hours FROM hours_log GROUP BY job_id
       ) hl ON j.id = hl.job_id
       WHERE j.user_id = ?${ledgerVisible()} ${dateFilter.replace(/job_date/g, 'j.job_date')}
-        AND NOT EXISTS (SELECT 1 FROM sub_payouts sp WHERE sp.job_id = j.id)`,
+        AND NOT EXISTS (SELECT 1 FROM payouts p WHERE p.job_id = j.id AND p.status <> 'planned')`,
       args: params
     });
 
@@ -234,7 +213,7 @@ export async function GET(request: Request) {
     const hourlyBurdenRate = yearlyGoalHours > 0 ? ytdOverhead.total / yearlyGoalHours : 0;
 
     // Calculate totals
-    const totalDirectCosts = materialsTotal.total + laborTotal.total + subPayoutTotal.total;
+    const totalDirectCosts = materialsTotal.total + crewCost.total;
     const totalVariableCosts = mileageTotal.total;
     const totalExpenses = totalDirectCosts + totalVariableCosts + overheadStats.total_overhead;
     const netProfit = jobStats.total_revenue - totalExpenses;
@@ -252,13 +231,12 @@ export async function GET(request: Request) {
           j.id, j.name, j.day_units,
           j.contract_price
             - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
-            - COALESCE((SELECT SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END) FROM labor WHERE job_id = j.id), 0)
             - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
-            - COALESCE((SELECT SUM(payout) FROM sub_payouts WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(amount) FROM payouts WHERE job_id = j.id AND status <> 'planned'), 0)
           AS gross_profit
         FROM jobs j
         WHERE j.user_id = ?${ledgerVisible()} ${dateFilter}
-          AND NOT EXISTS (SELECT 1 FROM sub_payouts sp WHERE sp.job_id = j.id)
+          AND NOT EXISTS (SELECT 1 FROM payouts p WHERE p.job_id = j.id AND p.status <> 'planned')
         ORDER BY j.job_date`,
       args: params,
     });
@@ -303,15 +281,14 @@ export async function GET(request: Request) {
       expenses: {
         bucket_a_direct: totalDirectCosts,
         materials: materialsTotal.total,
-        labor: laborTotal.total,
-        sub_payouts: subPayoutTotal.total,
+        crew: crewCost.total,
         bucket_b_variable: totalVariableCosts,
         mileage: mileageTotal.total,
         bucket_c_fixed: overheadStats.total_overhead,
         total: totalExpenses,
       },
       net_profit: netProfit,
-      total_sub_payouts: subPayoutTotal.total,
+      total_crew_cost: crewCost.total,
       total_outstanding: outstandingStats.total_outstanding,
       total_collected: outstandingStats.total_collected,
       owner_jobs: {

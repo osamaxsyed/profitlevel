@@ -24,14 +24,14 @@ export async function GET(request: Request) {
       goalByMonth[r.month] = r.amount;
     }
 
-    // Actual gross profit per month for this year (contract - materials - labor - mileage)
+    // Actual gross profit per month for this year (contract - materials - crew - mileage)
     const actualResult = await db.execute({
       sql: `SELECT
           CAST(strftime('%m', j.job_date) AS INTEGER) AS month,
           SUM(
             j.contract_price
             - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
-            - COALESCE((SELECT SUM(CASE WHEN is_flat_rate = 1 THEN rate ELSE hours * rate END) FROM labor WHERE job_id = j.id), 0)
+            - COALESCE((SELECT SUM(amount) FROM payouts WHERE job_id = j.id AND status <> 'planned'), 0)
             - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
           ) AS gross
         FROM jobs j

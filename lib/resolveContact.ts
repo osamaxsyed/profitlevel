@@ -3,7 +3,7 @@
 // Rule 1 of the migration spec: every job belongs to a contact. The Quo webhook
 // resolves one from the inbound phone; a job typed in here has no thread, so it
 // resolves by an optional phone field, else by an exact client_name match, else
-// it creates the contact. Identities in settings.own_phones or subs.phone are
+// it creates the contact. Identities in settings.own_phones or crew.phone are
 // never customers and never become a contact.
 import db from '@/lib/db';
 
@@ -16,11 +16,11 @@ export function toE164(raw: string | null | undefined): string | null {
 }
 
 async function isNotACustomer(phone: string): Promise<boolean> {
-  const [own, sub] = await Promise.all([
+  const [own, crewMatch] = await Promise.all([
     db.execute({ sql: "SELECT value FROM settings WHERE key = 'own_phones'", args: [] }),
-    db.execute({ sql: 'SELECT 1 FROM subs WHERE phone = ? LIMIT 1', args: [phone] }),
+    db.execute({ sql: 'SELECT 1 FROM crew WHERE phone = ? LIMIT 1', args: [phone] }),
   ]);
-  if (sub.rows.length) return true;
+  if (crewMatch.rows.length) return true;
   try {
     const list = JSON.parse(String((own.rows[0] as { value?: string } | undefined)?.value ?? '[]'));
     return Array.isArray(list) && list.includes(phone);

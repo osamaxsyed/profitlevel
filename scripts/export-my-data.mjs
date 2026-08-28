@@ -22,7 +22,7 @@ const jobIds = jobs.map(j => j.id);
 const placeholders = jobIds.length ? jobIds.map(() => '?').join(',') : 'NULL';
 
 const materials = jobIds.length ? await q(`SELECT * FROM materials WHERE job_id IN (${placeholders}) ORDER BY id`, jobIds) : [];
-const labor     = jobIds.length ? await q(`SELECT * FROM labor     WHERE job_id IN (${placeholders}) ORDER BY id`, jobIds) : [];
+const payouts   = jobIds.length ? await q(`SELECT p.*, c.name AS crew_name, c.kind AS crew_kind FROM payouts p LEFT JOIN crew c ON c.id = p.crew_id WHERE p.job_id IN (${placeholders}) ORDER BY p.id`, jobIds) : [];
 const mileage   = jobIds.length ? await q(`SELECT * FROM mileage   WHERE job_id IN (${placeholders}) ORDER BY id`, jobIds) : [];
 const hours_log = jobIds.length ? await q(`SELECT * FROM hours_log WHERE job_id IN (${placeholders}) ORDER BY id`, jobIds) : [];
 
@@ -30,16 +30,18 @@ const overhead  = await q('SELECT * FROM overhead  WHERE user_id = ? ORDER BY ex
 const settings  = await q('SELECT * FROM settings  WHERE user_id = ? OR user_id IS NULL', [USER_ID]);
 const irs_rates = await q('SELECT * FROM irs_rates WHERE user_id = ? OR user_id IS NULL ORDER BY year', [USER_ID]);
 
-const tables = { jobs, materials, labor, mileage, hours_log, overhead, settings, irs_rates };
+const crew = await q('SELECT * FROM crew ORDER BY id');
+
+const tables = { jobs, materials, payouts, crew, mileage, hours_log, overhead, settings, irs_rates };
 
 for (const [name, rows] of Object.entries(tables)) {
   await fs.writeFile(path.join(OUT, `${name}.json`), JSON.stringify(rows, null, 2));
 }
 
 // Jobs with nested children for easy reading
-const byJob = Object.fromEntries(jobIds.map(id => [id, { materials: [], labor: [], mileage: [], hours_log: [] }]));
+const byJob = Object.fromEntries(jobIds.map(id => [id, { materials: [], payouts: [], mileage: [], hours_log: [] }]));
 for (const r of materials) byJob[r.job_id]?.materials.push(r);
-for (const r of labor)     byJob[r.job_id]?.labor.push(r);
+for (const r of payouts)   byJob[r.job_id]?.payouts.push(r);
 for (const r of mileage)   byJob[r.job_id]?.mileage.push(r);
 for (const r of hours_log) byJob[r.job_id]?.hours_log.push(r);
 

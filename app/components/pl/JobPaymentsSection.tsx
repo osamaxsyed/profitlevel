@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { fmtMoney, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
 import PaidChip from './PaidChip';
-import { num, type JobPayment, type PaidStatus } from './subTypes';
+import { num, type JobPayment, type PaidStatus } from './crewTypes';
 
 // Money IN for one job: what the client has actually paid, against the
 // contract price. Mirrors the Materials/Labor/Mileage collapsible pattern

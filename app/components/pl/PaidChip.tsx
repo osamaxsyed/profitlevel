@@ -1,6 +1,6 @@
 'use client';
 
-import { PAID_TOKENS, type PaidStatus } from './subTypes';
+import { PAID_TOKENS, type PaidStatus } from './crewTypes';
 
 // Small semantic chip: paid / partial / unpaid. Same visual grammar as the
 // tier chip and the cleared/under stamp on JobStampCard.

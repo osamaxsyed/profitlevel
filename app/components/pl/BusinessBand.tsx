@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { fmtMoney, PL_ACCENT, PL_CLAY } from '@/lib/dayRate';
-import { num } from './subTypes';
+import { num } from './crewTypes';
 
 // Dashboard KPI band, split two ways since the Aug 2026 dispatch shift:
 //
-//   BUSINESS  — every job, subbed or not: revenue, honest net profit
-//               (sub payouts are now subtracted upstream), sub spend, and
+//   BUSINESS  — every job, crewed or not: revenue, honest net profit
+//               (crew cost is subtracted upstream), crew spend, and
 //               outstanding receivables (earned, not yet collected).
 //   YOUR LABOR — day-rate metrics for the jobs the owner personally worked.
 //
@@ -27,7 +27,7 @@ interface Summary {
   revenue: number;
   net_profit: number;
   job_count: number;
-  total_sub_payouts?: number;
+  total_crew_cost?: number;
   total_outstanding?: number;
   owner_jobs?: { revenue: number; count: number };
   day_rate?: DayRate;
@@ -72,7 +72,7 @@ export default function BusinessBand({ month }: { month?: string }) {
 
   const revenue = num(summary.revenue);
   const net = num(summary.net_profit);
-  const subSpend = num(summary.total_sub_payouts);
+  const crewSpend = num(summary.total_crew_cost);
   const outstanding = num(summary.total_outstanding);
   const dr = summary.day_rate;
   const ownerCount = summary.owner_jobs ? num(summary.owner_jobs.count) : (dr?.jobs_tagged ?? 0);
@@ -102,10 +102,10 @@ export default function BusinessBand({ month }: { month?: string }) {
             color={net >= 0 ? '#F2EDE4' : PL_CLAY}
           />
           <Stat
-            label="Sub spend"
-            value={subSpend > 0 ? `−${fmtMoney(subSpend)}` : '—'}
-            note={subSpend > 0 ? 'paid out to subs' : 'no subbed work yet'}
-            color={subSpend > 0 ? PL_CLAY : '#6E665A'}
+            label="Crew spend"
+            value={crewSpend > 0 ? `−${fmtMoney(crewSpend)}` : '—'}
+            note={crewSpend > 0 ? 'paid out to crew' : 'you worked it all'}
+            color={crewSpend > 0 ? PL_CLAY : '#6E665A'}
           />
           <Stat
             label="Outstanding"
@@ -132,7 +132,7 @@ export default function BusinessBand({ month }: { month?: string }) {
 
         {!hasOwnerLabor ? (
           <div className="text-pl-muted mt-[10px]" style={{ fontSize: 13 }}>
-            You dispatched every job this month. Your day-rate scoring comes back when you work one yourself.
+            Someone else worked every job this month. Your day-rate scoring comes back when you work one yourself.
           </div>
         ) : (
           <>

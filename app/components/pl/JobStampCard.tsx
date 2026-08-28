@@ -3,12 +3,12 @@
 import type { JobWithCosts } from '@/lib/types';
 import { fmtMoney, tierSummary, resultTokens } from '@/lib/dayRate';
 import PaidChip from './PaidChip';
-import { num, subLine, type JobDispatchFields, type PaidStatus } from './subTypes';
+import { crewLine, num, type JobDispatchFields, type PaidStatus } from './crewTypes';
 
 // Job "stamp" card: left accent stripe colored by result, tier chip + date,
-// name (+ optional sub), gross profit, and a ✓/✗ cleared/under stamp.
+// name (+ optional crew), gross profit, and a ✓/✗ cleared/under stamp.
 // Since the Aug 2026 dispatch rehaul it also carries a paid-status chip, the
-// sub payout line, and — while a job is only part-paid — its cash position.
+// crew payout line, and — while a job is only part-paid — its cash position.
 // Used on the dashboard (recent) and jobs list.
 
 type DispatchJob = JobWithCosts & Partial<JobDispatchFields>;
@@ -16,10 +16,10 @@ type DispatchJob = JobWithCosts & Partial<JobDispatchFields>;
 interface JobStampCardProps {
   job: DispatchJob;
   onOpen?: () => void;
-  showSub?: boolean;
+  showClient?: boolean;
 }
 
-export default function JobStampCard({ job, onOpen, showSub = false }: JobStampCardProps) {
+export default function JobStampCard({ job, onOpen, showClient = false }: JobStampCardProps) {
   const dr = job.day_rate;
   const met = dr?.met ?? null;
   const tokens = resultTokens(met);
@@ -35,7 +35,7 @@ export default function JobStampCard({ job, onOpen, showSub = false }: JobStampC
   }
 
   const paidStatus = job.paid_status as PaidStatus | undefined;
-  const subs = subLine(job.sub_payouts);
+  const crew = crewLine(job.payouts);
   const cash = num(job.cash_position);
   const showCash = paidStatus === 'partial' || (paidStatus === 'unpaid' && num(job.outstanding) > 0);
   const cashNeg = cash < 0;
@@ -67,11 +67,11 @@ export default function JobStampCard({ job, onOpen, showSub = false }: JobStampC
         </div>
       </div>
       <div className="font-bold mt-[11px] leading-tight" style={{ fontSize: 15 }}>{job.name}</div>
-      {showSub && job.client_name && (
+      {showClient && job.client_name && (
         <div className="text-pl-muted-2 mt-[1px]" style={{ fontSize: 12 }}>{job.client_name}</div>
       )}
-      {subs && (
-        <div className="text-pl-muted mt-[3px] pl-mono" style={{ fontSize: 11.5 }}>{subs}</div>
+      {crew && (
+        <div className="text-pl-muted mt-[3px] pl-mono" style={{ fontSize: 11.5 }}>{crew}</div>
       )}
       <div className="h-px my-[12px]" style={{ background: 'rgba(255,255,255,0.07)' }} />
       <div className="flex items-end justify-between">
