@@ -65,7 +65,7 @@ export async function GET() {
     const expensesResult = await db.execute({
       sql: `SELECT
         (SELECT COALESCE(SUM(m.cost + m.tax), 0) FROM materials m INNER JOIN jobs j ON m.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) +
-        (SELECT COALESCE(SUM(CASE WHEN l.is_flat_rate = 1 THEN l.rate ELSE l.hours * l.rate END), 0) FROM labor l INNER JOIN jobs j ON l.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) +
+        (SELECT COALESCE(SUM(p.amount), 0) FROM payouts p INNER JOIN jobs j ON p.job_id = j.id WHERE p.status <> 'planned' AND j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) +
         (SELECT COALESCE(SUM(m.miles * m.rate), 0) FROM mileage m INNER JOIN jobs j ON m.job_id = j.id WHERE j.user_id = ? AND j.job_date >= ?${ledgerVisible()}) as total_expenses`,
       args: [userId, dateStr, userId, dateStr, userId, dateStr]
     });
