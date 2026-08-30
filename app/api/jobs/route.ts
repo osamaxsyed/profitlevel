@@ -12,12 +12,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month'); // Format: YYYY-MM
 
-    // amount_paid uses a legacy fallback: jobs booked before job_payments existed have
-    // no payment rows but do carry paid_via, and those count as paid in full.
-    const amountPaidExpr = `CASE
-          WHEN pay.total IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price
-          ELSE COALESCE(pay.total, 0)
-        END`;
+    // AMOUNT DUE (2026-08-30). `contract_price` is the FLAT price; what the customer
+    // owes is `v_job_cash.total_due` = the quote + add-ons agreed mid-job + materials
+    // passed through at cost. This route used to hand-roll `outstanding` and
+    // `cash_position` off contract_price, which meant this app and the dashboard
+    // reported different numbers for the same job out of the same database. It now
+    // joins the view and reads its answers — one definition of "due", in one place.
+    //
+    // The legacy fallback is inside the view too: a job with no payment rows but a
+    // paid_via flag counts as collected in full, now against total_due.
 
     let query = `
       SELECT
@@ -27,22 +30,24 @@ export async function GET(request: Request) {
         COALESCE(cw.total, 0) as crew_cost,
         COALESCE(cw.planned, 0) as crew_planned,
         COALESCE(hl.total_hours, 0) as hours_logged,
-        j.contract_price -
+        vc.change_orders,
+        vc.billable_materials,
+        vc.total_due,
+        vc.total_due -
           COALESCE(mat.total, 0) -
           COALESCE(mil.total, 0) -
           COALESCE(cw.total, 0) as gross_profit,
         CASE
           WHEN COALESCE(hl.total_hours, j.hours_spent, 0) > 0 THEN
-            (j.contract_price - COALESCE(mat.total, 0) - COALESCE(mil.total, 0) - COALESCE(cw.total, 0)) / COALESCE(hl.total_hours, j.hours_spent)
+            (vc.total_due - COALESCE(mat.total, 0) - COALESCE(mil.total, 0) - COALESCE(cw.total, 0)) / COALESCE(hl.total_hours, j.hours_spent)
           ELSE NULL
         END as gross_hourly_rate,
-        ${amountPaidExpr} as amount_paid,
-        MAX(j.contract_price - (${amountPaidExpr}), 0) as outstanding,
-        (${amountPaidExpr})
-          - COALESCE(mat.total, 0)
-          - COALESCE(cw.total, 0) as cash_position,
+        vc.collected_effective as amount_paid,
+        MAX(vc.outstanding, 0) as outstanding,
+        vc.cash_position,
         CASE WHEN COALESCE(cw.cnt, 0) > 0 THEN 1 ELSE 0 END as has_crew
       FROM jobs j
+      JOIN v_job_cash vc ON vc.id = j.id
       LEFT JOIN (
         SELECT job_id, SUM(cost + tax) as total
         FROM materials
@@ -136,7 +141,10 @@ export async function GET(request: Request) {
       const gross = Number(r.gross_profit ?? 0);
       const dayRate = evaluateJob(units, gross, targets);
 
-      const contractPrice = Number(r.contract_price ?? 0);
+      // `contract_price` is the flat price; what the customer owes is `total_due`.
+      // Comparing what came in against the QUOTE called a job "paid" while an add-on or
+      // a pass-through material was still owed on it.
+      const totalDue = Number(r.total_due ?? r.contract_price ?? 0);
       const amountPaid = Number(r.amount_paid ?? 0);
       const outstanding = Number(r.outstanding ?? 0);
 
@@ -144,7 +152,7 @@ export async function GET(request: Request) {
       let paidStatus: 'paid' | 'partial' | 'unpaid';
       if (outstanding <= 0.005) {
         paidStatus = 'paid';
-      } else if (amountPaid > 0 && amountPaid < contractPrice) {
+      } else if (amountPaid > 0 && amountPaid < totalDue) {
         paidStatus = 'partial';
       } else {
         paidStatus = 'unpaid';
@@ -158,6 +166,9 @@ export async function GET(request: Request) {
         crew_planned: Number(r.crew_planned ?? 0),
         payouts: payoutsByJob.get(Number(r.id)) ?? [],
         amount_paid: amountPaid,
+        total_due: totalDue,
+        change_orders: Number(r.change_orders ?? 0),
+        billable_materials: Number(r.billable_materials ?? 0),
         outstanding,
         cash_position: Number(r.cash_position ?? 0),
         has_crew: Number(r.has_crew ?? 0) === 1,

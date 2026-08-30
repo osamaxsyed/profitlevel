@@ -15,10 +15,12 @@ export async function GET(request: Request) {
     // fall back to jobs.hours_spent for legacy jobs with no log rows.
     const jobStatsResult = await db.execute({
       sql: `SELECT
-        COALESCE(SUM(j.contract_price), 0) as total_revenue,
+        -- contract_price is the flat price; what the customer owes is v_job_cash.total_due.
+        COALESCE(SUM(vc.total_due), 0) as total_revenue,
         COALESCE(SUM(COALESCE(hl.total_hours, j.hours_spent, 0)), 0) as total_billable_hours,
         COUNT(j.id) as job_count
       FROM jobs j
+      JOIN v_job_cash vc ON vc.id = j.id
       LEFT JOIN (
         SELECT job_id, SUM(hours) as total_hours
         FROM hours_log
@@ -73,19 +75,13 @@ export async function GET(request: Request) {
     // Receivables: what has been billed but not yet collected.
     // Legacy jobs predate job_payments, so a paid_via with no payment rows means paid in full.
     const outstandingResult = await db.execute({
+      // contract_price is the flat price; what the customer owes is v_job_cash.total_due.
+      // The view already carries the legacy paid_via fallback, measured against total_due.
       sql: `SELECT
-        COALESCE(SUM(MAX(j.contract_price - CASE
-          WHEN pay.total IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price
-          ELSE COALESCE(pay.total, 0)
-        END, 0)), 0) as total_outstanding,
-        COALESCE(SUM(CASE
-          WHEN pay.total IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price
-          ELSE COALESCE(pay.total, 0)
-        END), 0) as total_collected
+        COALESCE(SUM(MAX(vc.outstanding, 0)), 0) as total_outstanding,
+        COALESCE(SUM(vc.collected_effective), 0) as total_collected
       FROM jobs j
-      LEFT JOIN (
-        SELECT job_id, SUM(amount) as total FROM job_payments GROUP BY job_id
-      ) pay ON j.id = pay.job_id
+      JOIN v_job_cash vc ON vc.id = j.id
       WHERE j.user_id = ? AND strftime('%Y-%m', j.job_date) = ?${ledgerVisible()}`,
       args: [userId, month]
     });
@@ -99,10 +95,12 @@ export async function GET(request: Request) {
     // Day-rate metrics only make sense over these.
     const ownerJobsResult = await db.execute({
       sql: `SELECT
-        COALESCE(SUM(j.contract_price), 0) as revenue,
+        -- contract_price is the flat price; what the customer owes is v_job_cash.total_due.
+        COALESCE(SUM(vc.total_due), 0) as revenue,
         COUNT(j.id) as job_count,
         COALESCE(SUM(COALESCE(hl.total_hours, j.hours_spent, 0)), 0) as billable_hours
       FROM jobs j
+      JOIN v_job_cash vc ON vc.id = j.id
       LEFT JOIN (
         SELECT job_id, SUM(hours) as total_hours FROM hours_log GROUP BY job_id
       ) hl ON j.id = hl.job_id
@@ -142,13 +140,15 @@ export async function GET(request: Request) {
 
     const monthJobsResult = await db.execute({
       sql: `SELECT
-          j.id, j.name, j.contract_price, j.day_units,
-          j.contract_price
+          j.id, j.name, j.contract_price, vc.total_due, j.day_units,
+          -- contract_price is the flat price; what the customer owes is v_job_cash.total_due.
+          vc.total_due
             - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
             - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
             - COALESCE((SELECT SUM(amount) FROM payouts WHERE job_id = j.id AND status <> 'planned'), 0)
           AS gross_profit
         FROM jobs j
+        JOIN v_job_cash vc ON vc.id = j.id
         WHERE j.user_id = ?${ledgerVisible()} AND strftime('%Y-%m', j.job_date) = ?
         ORDER BY j.job_date`,
       args: [userId, month],

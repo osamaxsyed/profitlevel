@@ -46,10 +46,12 @@ export async function GET() {
     // source of truth); fall back to jobs.hours_spent for jobs with no log rows.
     const jobStatsResult = await db.execute({
       sql: `SELECT
-        COALESCE(SUM(j.contract_price), 0) as total_revenue,
+        -- contract_price is the flat price; what the customer owes is v_job_cash.total_due.
+        COALESCE(SUM(vc.total_due), 0) as total_revenue,
         COALESCE(SUM(COALESCE(hl.total_hours, j.hours_spent, 0)), 0) as total_hours,
         COUNT(j.id) as job_count
       FROM jobs j
+      JOIN v_job_cash vc ON vc.id = j.id
       LEFT JOIN (
         SELECT job_id, SUM(hours) as total_hours
         FROM hours_log
