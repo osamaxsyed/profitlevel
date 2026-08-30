@@ -134,9 +134,19 @@ export interface JobWithCosts extends Job {
   /** SUM of payouts.amount for `planned` rows — pencilled in, not yet owed. */
   crew_planned: number;
   payouts: PayoutWithCrew[];
-  /** SUM of job_payments.amount, or contract_price for legacy paid_via-only jobs. */
+  /**
+   * What the customer OWES: `contract_price` is only the flat labor quote.
+   *   total_due = contract_price + agreed change_orders + billable materials (at cost)
+   * From `v_job_cash`, the one definition of "due" in the database.
+   */
+  total_due: number;
+  /** SUM of agreed change_orders — add-ons agreed mid-job. Negative is a credit. */
+  change_orders: number;
+  /** Materials passed through to the customer at cost (billable=1). Revenue AND cost. */
+  billable_materials: number;
+  /** SUM of job_payments.amount, or total_due for legacy paid_via-only jobs. */
   amount_paid: number;
-  /** contract_price - amount_paid, floored at 0. */
+  /** total_due - amount_paid, floored at 0. */
   outstanding: number;
   /** amount_paid - materials - crew cost (mileage excluded: non-cash). */
   cash_position: number;

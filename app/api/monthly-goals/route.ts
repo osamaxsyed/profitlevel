@@ -29,12 +29,14 @@ export async function GET(request: Request) {
       sql: `SELECT
           CAST(strftime('%m', j.job_date) AS INTEGER) AS month,
           SUM(
-            j.contract_price
+            -- contract_price is the flat price; what the customer owes is v_job_cash.total_due.
+            vc.total_due
             - COALESCE((SELECT SUM(cost + tax) FROM materials WHERE job_id = j.id), 0)
             - COALESCE((SELECT SUM(amount) FROM payouts WHERE job_id = j.id AND status <> 'planned'), 0)
             - COALESCE((SELECT SUM(miles * rate) FROM mileage WHERE job_id = j.id), 0)
           ) AS gross
         FROM jobs j
+        JOIN v_job_cash vc ON vc.id = j.id
         WHERE j.user_id = ? AND strftime('%Y', j.job_date) = ?${ledgerVisible()}
         GROUP BY month`,
       args: [userId, String(year)],

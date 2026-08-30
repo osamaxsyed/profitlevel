@@ -1,11 +1,16 @@
 import type { JobWithCosts } from './types';
 
 export const sampleJobs: JobWithCosts[] = [
+  // Demo jobs carry no add-ons and pass nothing through, so total_due == contract_price
+  // on every row. contract_price is the flat price; what the customer owes is total_due.
   {
     id: 1,
     name: 'Kitchen Remodel - Johnson Residence',
     client_name: 'Sarah Johnson',
     contract_price: 18500,
+    total_due: 18500,
+    change_orders: 0,
+    billable_materials: 0,
     job_date: '2026-02-10',
     hours_spent: 85,
     hours_logged: 85,
@@ -28,6 +33,9 @@ export const sampleJobs: JobWithCosts[] = [
     name: 'Bathroom Renovation - Chen Property',
     client_name: 'David Chen',
     contract_price: 12000,
+    total_due: 12000,
+    change_orders: 0,
+    billable_materials: 0,
     job_date: '2026-02-05',
     hours_spent: 56,
     hours_logged: 56,
@@ -50,6 +58,9 @@ export const sampleJobs: JobWithCosts[] = [
     name: 'Deck Build - Martinez Home',
     client_name: 'Carlos Martinez',
     contract_price: 15200,
+    total_due: 15200,
+    change_orders: 0,
+    billable_materials: 0,
     job_date: '2026-01-28',
     hours_spent: 72,
     hours_logged: 72,
@@ -72,6 +83,9 @@ export const sampleJobs: JobWithCosts[] = [
     name: 'Fence Repair - Williams Yard',
     client_name: 'Lisa Williams',
     contract_price: 3500,
+    total_due: 3500,
+    change_orders: 0,
+    billable_materials: 0,
     job_date: '2026-01-22',
     hours_spent: 18,
     hours_logged: 18,
@@ -94,6 +108,9 @@ export const sampleJobs: JobWithCosts[] = [
     name: 'Garage Door Install - Thompson Garage',
     client_name: 'Mike Thompson',
     contract_price: 4200,
+    total_due: 4200,
+    change_orders: 0,
+    billable_materials: 0,
     job_date: '2026-01-15',
     hours_spent: 22,
     hours_logged: 22,

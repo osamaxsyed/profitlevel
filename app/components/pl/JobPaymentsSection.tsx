@@ -17,6 +17,9 @@ const fieldStyle = { border: '1px solid rgba(255,255,255,0.1)' } as const;
 export default function JobPaymentsSection({
   jobId,
   contractPrice,
+  totalDue,
+  changeOrders = 0,
+  billableMaterials = 0,
   payments,
   amountPaid,
   outstanding,
@@ -24,7 +27,16 @@ export default function JobPaymentsSection({
   onChange,
 }: {
   jobId: number;
+  /** The FLAT labor quote. Kept for the "quoted $X" line — never the bar's denominator. */
   contractPrice: number;
+  /**
+   * What the customer OWES: the quote + add-ons agreed mid-job + materials passed
+   * through at cost. The progress bar measures against THIS — filling it against the
+   * quote showed a job as fully paid while an add-on was still outstanding.
+   */
+  totalDue?: number;
+  changeOrders?: number;
+  billableMaterials?: number;
   payments: JobPayment[];
   amountPaid: number;
   outstanding: number;
@@ -43,7 +55,13 @@ export default function JobPaymentsSection({
 
   const paid = num(amountPaid);
   const due = num(outstanding);
-  const pct = contractPrice > 0 ? Math.min(100, (paid / contractPrice) * 100) : 0;
+  const owed = num(totalDue ?? contractPrice);
+  const pct = owed > 0 ? Math.min(100, (paid / owed) * 100) : 0;
+  // Named so the number he quoted stays visible next to the number he owes.
+  const extras = [
+    num(changeOrders) ? `${num(changeOrders) < 0 ? '−' : '+'}${fmtMoney(Math.abs(num(changeOrders)))} ${num(changeOrders) < 0 ? 'credit' : 'add-ons'}` : '',
+    num(billableMaterials) ? `+${fmtMoney(num(billableMaterials))} materials` : '',
+  ].filter(Boolean).join(' ');
 
   const addPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +127,13 @@ export default function JobPaymentsSection({
         <div className="mt-3">
           <div className="flex items-baseline justify-between pl-mono">
             <span className="font-semibold" style={{ fontSize: 20 }}>{fmtMoney(paid)}</span>
-            <span className="text-pl-muted-2" style={{ fontSize: 13 }}>of {fmtMoney(contractPrice)}</span>
+            <span className="text-pl-muted-2" style={{ fontSize: 13 }}>of {fmtMoney(owed)}</span>
           </div>
+          {extras && (
+            <div className="text-pl-muted mt-[4px]" style={{ fontSize: 11.5 }}>
+              {fmtMoney(contractPrice)} quoted {extras}
+            </div>
+          )}
           <div className="mt-[8px] rounded-full overflow-hidden" style={{ height: 6, background: '#0C0B09' }}>
             <div style={{ width: `${pct}%`, height: '100%', background: due > 0 ? '#E8B530' : PL_ACCENT }} />
           </div>

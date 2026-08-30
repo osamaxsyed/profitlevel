@@ -264,6 +264,11 @@ export default function Home() {
       crew_planned: 0,
       payouts: [],
       amount_paid: 0,
+      // A brand-new job has no add-ons and nothing passed through yet, so what it owes
+      // IS the quote. contract_price is the flat price; what the customer owes is total_due.
+      total_due: parseFloat(newJob.contract_price),
+      change_orders: 0,
+      billable_materials: 0,
       outstanding: parseFloat(newJob.contract_price),
       cash_position: 0,
       has_crew: false,
@@ -908,7 +913,8 @@ export default function Home() {
                     <div className="mt-4 pt-4 border-t border-light-gray pl-mono">
                       <div className="font-bold uppercase text-pl-muted-2 mb-1" style={{ fontSize: 11, letterSpacing: '0.16em', fontFamily: 'var(--font-archivo)' }}>The math</div>
                       {[
-                        { label: 'Revenue', val: formatCurrency(currentJob.contract_price), color: '#F2EDE4', neg: false },
+                        // contract_price is the flat price; what the customer owes is total_due.
+                        { label: 'Revenue', val: formatCurrency(num(currentJob.total_due ?? currentJob.contract_price)), color: '#F2EDE4', neg: false },
                         { label: 'Materials', val: formatCurrency(currentJob.materials_total), color: PL_CLAY, neg: true },
                         ...(num(currentJob.crew_cost) > 0
                           ? [{ label: 'Crew', val: formatCurrency(num(currentJob.crew_cost)), color: PL_CLAY, neg: true }]
@@ -965,7 +971,7 @@ export default function Home() {
                           </span>
                         </div>
                         <div className="text-pl-muted mt-[5px]" style={{ fontSize: 12 }}>
-                          {formatCurrency(num(currentJob.amount_paid))} collected against {formatCurrency(currentJob.contract_price)} — {formatCurrency(num(currentJob.outstanding))} still owed.
+                          {formatCurrency(num(currentJob.amount_paid))} collected against {formatCurrency(num(currentJob.total_due ?? currentJob.contract_price))} — {formatCurrency(num(currentJob.outstanding))} still owed.
                         </div>
                       </div>
                     )}
@@ -976,6 +982,9 @@ export default function Home() {
                 <JobPaymentsSection
                   jobId={currentJob.id}
                   contractPrice={currentJob.contract_price}
+                  totalDue={num(currentJob.total_due ?? currentJob.contract_price)}
+                  changeOrders={num(currentJob.change_orders)}
+                  billableMaterials={num(currentJob.billable_materials)}
                   payments={jobPayments}
                   amountPaid={num(currentJob.amount_paid)}
                   outstanding={num(currentJob.outstanding)}

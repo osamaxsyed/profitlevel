@@ -34,6 +34,13 @@ async function initializeDatabase() {
       cost REAL NOT NULL,
       tax REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      -- A material is a COST. A BILLABLE one is a cost the customer is paying back at
+      -- cost, so it is revenue AND cost in the same amount and nets to zero in margin.
+      -- billed_amount NULL means "the receipt" (cost + tax).
+      billable INTEGER NOT NULL DEFAULT 0,
+      billed_amount REAL,
+      source TEXT,
+      note TEXT,
       FOREIGN KEY (job_id) REFERENCES jobs (id) ON DELETE CASCADE
     );
   `);
@@ -162,16 +169,58 @@ async function initializeDatabase() {
   // Reporting views over the crew ledger. Crew cost counts everything that is
   // not merely `planned`; `sub_payout` stays as an alias so older callers that
   // still ask for it get the same number, and helper_labor is now always 0.
+  // AMOUNT DUE (2026-08-30). `contract_price` is the FLAT price — the labor quote.
+  // What a customer owes is `v_job_cash.total_due`:
+  //
+  //   total_due = contract_price
+  //             + change_orders  (status='agreed' only; a negative one is a credit)
+  //             + billable materials (billable=1, at COALESCE(billed_amount, cost+tax))
+  //
+  // Osama's price to a customer was always three things and the books had one field.
+  // Pass-through materials are revenue AND cost, so `margin` nets them to zero by
+  // construction — bill $180.04 at cost, spend $180.04, earn nothing on them.
+  //
+  // These definitions are the SAME SQL as cnjdash `docs/migration/amount-due-views.cjs`,
+  // which is what actually created them on production. Both apps read one Turso DB, so a
+  // drift here is two apps reporting different numbers for the same job — which is
+  // exactly what this work existed to end. IF NOT EXISTS means these only fire on a
+  // fresh database; change one, change the other.
+  const CO = `(SELECT COALESCE(SUM(co.amount),0) FROM change_orders co WHERE co.job_id = j.id AND co.status = 'agreed')`;
+  const BILLABLE = `(SELECT COALESCE(SUM(COALESCE(mm.billed_amount, mm.cost + COALESCE(mm.tax,0))),0) FROM materials mm WHERE mm.job_id = j.id AND mm.billable = 1)`;
+  const TOTAL_DUE = `ROUND(COALESCE(j.contract_price,0) + ${CO} + ${BILLABLE}, 2)`;
+  const COLLECTED_EFF = `CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN ${TOTAL_DUE} ELSE COALESCE(p.paid,0) END`;
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS change_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      reason TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'agreed',
+      agreed_at TEXT,
+      source TEXT NOT NULL,
+      evidence TEXT,
+      created_at TEXT NOT NULL,
+      voided_at TEXT,
+      void_reason TEXT
+    );
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_change_orders_job ON change_orders(job_id);`);
+
   await db.execute(`
     CREATE VIEW IF NOT EXISTS v_job_margin AS
      SELECT j.id, j.name, j.client_name, j.job_date, j.contract_price,
+       ROUND(${CO},2) AS change_orders,
+       ROUND(${BILLABLE},2) AS billable_materials,
+       ${TOTAL_DUE} AS total_due,
+       ${TOTAL_DUE} AS revenue,
        COALESCE(m.mat,0) AS materials,
        COALESCE(pc.crew,0) AS crew_cost,
        COALESCE(pc.crew,0) AS sub_payout,
        0 AS helper_labor,
        COALESCE(pp.planned,0) AS crew_planned,
-       ROUND(j.contract_price - COALESCE(m.mat,0) - COALESCE(pc.crew,0),2) AS margin,
-       ROUND(100.0*(j.contract_price - COALESCE(m.mat,0) - COALESCE(pc.crew,0))/NULLIF(j.contract_price,0),1) AS margin_pct
+       ROUND(${TOTAL_DUE} - COALESCE(m.mat,0) - COALESCE(pc.crew,0),2) AS margin,
+       ROUND(100.0*(${TOTAL_DUE} - COALESCE(m.mat,0) - COALESCE(pc.crew,0))/NULLIF(${TOTAL_DUE},0),1) AS margin_pct
      FROM jobs j
      LEFT JOIN (SELECT job_id, SUM(cost+COALESCE(tax,0)) mat FROM materials GROUP BY job_id) m ON m.job_id=j.id
      LEFT JOIN (SELECT job_id, SUM(amount) crew FROM payouts WHERE status <> 'planned' GROUP BY job_id) pc ON pc.job_id=j.id
@@ -181,11 +230,16 @@ async function initializeDatabase() {
   await db.execute(`
     CREATE VIEW IF NOT EXISTS v_job_cash AS
      SELECT j.id, j.name, j.client_name, j.contract_price,
+       ROUND(${CO},2) AS change_orders,
+       ROUND(${BILLABLE},2) AS billable_materials,
+       ${TOTAL_DUE} AS total_due,
        COALESCE(p.paid,0) AS collected,
-       CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price ELSE COALESCE(p.paid,0) END AS collected_effective,
-       j.contract_price - CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price ELSE COALESCE(p.paid,0) END AS outstanding,
-       ROUND(CASE WHEN p.paid IS NULL AND j.paid_via IS NOT NULL THEN j.contract_price ELSE COALESCE(p.paid,0) END
-         - COALESCE(m.mat,0) - COALESCE(pc.crew,0), 2) AS cash_position
+       ROUND(${COLLECTED_EFF},2) AS collected_effective,
+       ROUND(${TOTAL_DUE} - (${COLLECTED_EFF}), 2) AS outstanding,
+       ROUND(COALESCE(m.mat,0),2) AS material_cost,
+       ROUND(COALESCE(pc.crew,0),2) AS crew,
+       ROUND(${COLLECTED_EFF} - COALESCE(m.mat,0) - COALESCE(pc.crew,0), 2) AS cash_position,
+       ROUND(${TOTAL_DUE} - COALESCE(m.mat,0) - COALESCE(pc.crew,0), 2) AS margin
      FROM jobs j
      LEFT JOIN (SELECT job_id, SUM(amount) paid FROM job_payments GROUP BY job_id) p ON p.job_id=j.id
      LEFT JOIN (SELECT job_id, SUM(cost+COALESCE(tax,0)) mat FROM materials GROUP BY job_id) m ON m.job_id=j.id
