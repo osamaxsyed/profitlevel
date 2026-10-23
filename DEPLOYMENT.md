@@ -39,7 +39,7 @@ Add these in Vercel Project Settings → Environment Variables:
 
 ```
 TURSO_URL=libsql://profitlevel-osamaxsyed.aws-us-east-1.turso.io
-TURSO_TOKEN=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzAyNzAzOTIsImlkIjoiYjcwM2FlYWItYWJhMC00ZDFjLWFmOGUtYWI1YTE2ZWZmNjNjIiwicmlkIjoiMzc3ZTc1NTYtODAxMC00ZTJjLWEzM2YtMWMyYjBlYTkxNzE2In0.NJlXztwZMEwANjUoIdlOz_nbzTbtyczar9ciVGnC_zpCgR6mXP1G3DMXQa0MKbi4e0xY-eYXQGCy39WQ0Lf4Cg
+TURSO_TOKEN=<rotated 2026-10-22 — never commit the value; it lives in Vercel (sensitive) and the VM env only>
 ```
 
 ## 🌐 Configure Custom Domain
